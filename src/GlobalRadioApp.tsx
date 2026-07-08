@@ -23,10 +23,10 @@ import {
   upsertStoredStation
 } from './lib/globalRadioStorage';
 import { fetchNowPlayingInfo, getMediaSessionMetadata, getStationOnlyNowPlaying } from './lib/nowPlaying';
-import { compareStationsByQuality, scoreStationQuality } from './lib/qualityScore';
+import { scoreStationQuality } from './lib/qualityScore';
 import { markAlarmTriggered, shouldTriggerAlarm } from './lib/radioAlarm';
 import { searchStations } from './lib/radioBrowser';
-import type { GlobalRadioSettings, NowPlayingInfo, PlaybackStatus, RadioAlarmSettings, RadioStation, StoredStation } from './types/station';
+import type { GlobalRadioSettings, NowPlayingInfo, PlaybackStatus, RadioAlarmSettings, RadioStation, StationQuality, StationQualityOptions, StoredStation } from './types/station';
 import './global-radio.css';
 
 type ViewKey = 'discover' | 'favorites' | 'recent' | 'settings';
@@ -52,9 +52,14 @@ function stationFromStored(station: StoredStation): RadioStation {
   };
 }
 
-function sortStations(stations: RadioStation[], sort: RadioFilters['sort'], settings: GlobalRadioSettings): RadioStation[] {
+function sortStations(
+  stations: RadioStation[],
+  sort: RadioFilters['sort'],
+  settings: GlobalRadioSettings,
+  getQuality: (station: RadioStation) => StationQuality = (station) => scoreStationQuality(station)
+): RadioStation[] {
   const visibleStations = settings.hideLowQuality
-    ? stations.filter((station) => !['low', 'failed'].includes(scoreStationQuality(station).grade))
+    ? stations.filter((station) => !['low', 'failed'].includes(getQuality(station).grade))
     : stations;
 
   const sorted = visibleStations.slice();
@@ -68,22 +73,106 @@ function sortStations(stations: RadioStation[], sort: RadioFilters['sort'], sett
   }
 
   return sorted.sort((a, b) => {
+    const qualityA = getQuality(a);
+    const qualityB = getQuality(b);
     const httpsBoostA = settings.preferHttps && (a.url_resolved || a.url).startsWith('https://') ? 4 : 0;
     const httpsBoostB = settings.preferHttps && (b.url_resolved || b.url).startsWith('https://') ? 4 : 0;
-    const byQuality = compareStationsByQuality({ ...a, bitrate: Number(a.bitrate ?? 0) + httpsBoostA }, { ...b, bitrate: Number(b.bitrate ?? 0) + httpsBoostB });
+    const byQuality = qualityB.score + httpsBoostB - (qualityA.score + httpsBoostA);
 
     if (byQuality !== 0) {
       return byQuality;
     }
 
-    return Number(b.votes ?? 0) - Number(a.votes ?? 0);
+    const byBitrate = Number(b.bitrate ?? 0) - Number(a.bitrate ?? 0);
+    return byBitrate !== 0 ? byBitrate : Number(b.votes ?? 0) - Number(a.votes ?? 0);
   });
+}
+
+function detectNativeHlsSupport(): boolean {
+  if (typeof document === 'undefined' || typeof navigator === 'undefined') {
+    return true;
+  }
+
+  const userAgent = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/.test(userAgent) && !/Chrome|Chromium|CriOS|Edg|OPR|Firefox|SamsungBrowser/.test(userAgent);
+  if (!isIOS && !isSafari) {
+    return false;
+  }
+
+  const audio = document.createElement('audio');
+  return Boolean(audio.canPlayType('application/vnd.apple.mpegurl') || audio.canPlayType('application/x-mpegURL'));
+}
+
+function isHlsStation(station: RadioStation): boolean {
+  const streamUrl = `${station.url_resolved || station.url}`.toLowerCase();
+  return station.hls === 1 || streamUrl.includes('.m3u8');
+}
+
+function getPlaybackFailureKey(station: RadioStation): string {
+  return `${station.stationuuid}:${station.url_resolved || station.url}`.toLowerCase();
+}
+
+function getStreamCandidates(station: RadioStation): string[] {
+  return Array.from(new Set([station.url_resolved, station.url].filter((url): url is string => Boolean(url?.trim()))));
+}
+
+function isAutoplayBlockedError(error: unknown): boolean {
+  return error instanceof DOMException && ['NotAllowedError', 'AbortError'].includes(error.name);
+}
+
+function createPlaybackStartWatcher(audio: HTMLAudioElement, timeoutMs: number): { promise: Promise<void>; cancel: () => void } {
+  let timeout = 0;
+  let settled = false;
+  let cleanup = () => undefined;
+
+  const promise = new Promise<void>((resolve, reject) => {
+    const finish = (handler: () => void) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      handler();
+    };
+
+    const handleReady = () => {
+      if (!audio.paused && audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        finish(resolve);
+      }
+    };
+    const handleError = () => finish(() => reject(new Error('media_error')));
+
+    cleanup = () => {
+      window.clearTimeout(timeout);
+      audio.removeEventListener('playing', handleReady);
+      audio.removeEventListener('canplay', handleReady);
+      audio.removeEventListener('error', handleError);
+    };
+
+    audio.addEventListener('playing', handleReady);
+    audio.addEventListener('canplay', handleReady);
+    audio.addEventListener('error', handleError);
+    timeout = window.setTimeout(() => finish(() => reject(new Error('playback_timeout'))), timeoutMs);
+    handleReady();
+  });
+
+  return {
+    promise,
+    cancel: () => {
+      settled = true;
+      cleanup();
+    }
+  };
 }
 
 export default function GlobalRadioApp() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerColumnRef = useRef<HTMLElement>(null);
   const playbackTimerRef = useRef<number | null>(null);
+  const playbackAttemptRef = useRef(false);
+  const activePlaybackStationRef = useRef<RadioStation | null>(null);
   const alarmRef = useRef<RadioAlarmSettings>(loadRadioAlarmSettings());
   const playDirectRef = useRef<(station?: RadioStation | null) => Promise<void>>(async () => undefined);
   const showToastRef = useRef<(message: string, tone?: ToastState['tone']) => void>(() => undefined);
@@ -96,6 +185,7 @@ export default function GlobalRadioApp() {
   const [activeStation, setActiveStation] = useState<RadioStation | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>('idle');
   const [playbackError, setPlaybackError] = useState('');
+  const [playbackFailureKeys, setPlaybackFailureKeys] = useState<Set<string>>(() => new Set());
   const [activeSourceType, setActiveSourceType] = useState<'radio' | 'youtube'>('radio');
   const [youtubeMountedStationId, setYoutubeMountedStationId] = useState('');
   const [favorites, setFavorites] = useState<StoredStation[]>(() => loadFavoriteStations());
@@ -107,13 +197,22 @@ export default function GlobalRadioApp() {
   const [listError, setListError] = useState('');
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  const nativeHlsSupported = useMemo(detectNativeHlsSupport, []);
+  const qualityOptionsForStation = useCallback(
+    (station: RadioStation): StationQualityOptions => ({
+      nativeHlsSupported,
+      hasRecentPlaybackFailure: playbackFailureKeys.has(getPlaybackFailureKey(station))
+    }),
+    [nativeHlsSupported, playbackFailureKeys]
+  );
+  const getStationQuality = useCallback((station: RadioStation) => scoreStationQuality(station, qualityOptionsForStation(station)), [qualityOptionsForStation]);
   const favoriteIds = useMemo(() => new Set(favorites.map((station) => station.stationuuid)), [favorites]);
-  const visibleStations = useMemo(() => sortStations(stations, filters.sort, settings), [stations, filters.sort, settings]);
+  const visibleStations = useMemo(() => sortStations(stations, filters.sort, settings, getStationQuality), [getStationQuality, stations, filters.sort, settings]);
   const favoriteStations = useMemo(() => favorites.map(stationFromStored), [favorites]);
   const recentStations = useMemo(() => recent.map(stationFromStored), [recent]);
   const displayedStations = view === 'favorites' ? favoriteStations : view === 'recent' ? recentStations : visibleStations;
   const currentPlaybackStation = activeStation ?? selectedStation;
-  const currentQuality = currentPlaybackStation ? scoreStationQuality(currentPlaybackStation) : null;
+  const currentQuality = currentPlaybackStation ? getStationQuality(currentPlaybackStation) : null;
   const countryCount = useMemo(() => new Set(displayedStations.map((station) => station.countrycode || station.country).filter(Boolean)).size, [displayedStations]);
   const hasMountedYouTube = selectedStation?.stationuuid === youtubeMountedStationId;
   const hasPlayerContext = Boolean(currentPlaybackStation);
@@ -131,6 +230,32 @@ export default function GlobalRadioApp() {
 
   const showToast = useCallback((message: string, tone: ToastState['tone'] = 'info') => {
     setToast({ tone, message });
+  }, []);
+
+  const markPlaybackFailure = useCallback((station: RadioStation) => {
+    const key = getPlaybackFailureKey(station);
+    setPlaybackFailureKeys((current) => {
+      if (current.has(key)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  const clearPlaybackFailure = useCallback((station: RadioStation) => {
+    const key = getPlaybackFailureKey(station);
+    setPlaybackFailureKeys((current) => {
+      if (!current.has(key)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
   }, []);
 
   const bringPlayerIntoView = useCallback(() => {
@@ -152,7 +277,7 @@ export default function GlobalRadioApp() {
   }, []);
 
   const loadStations = useCallback(
-    async (nextFilters: RadioFilters, nextQuery: string, nextSettings = settings) => {
+    async (nextFilters: RadioFilters, nextQuery: string) => {
       setLoading(true);
       setListError('');
 
@@ -164,10 +289,9 @@ export default function GlobalRadioApp() {
           tag: nextFilters.tag,
           limit: nextFilters.country === 'JP' ? 120 : 100
         });
-        const sorted = sortStations(results, nextFilters.sort, nextSettings);
-        setStations(sorted);
+        setStations(results);
         setSelectedStation((current) => {
-          if (current && sorted.some((station) => station.stationuuid === current.stationuuid)) {
+          if (current && results.some((station) => station.stationuuid === current.stationuuid)) {
             return current;
           }
 
@@ -179,7 +303,7 @@ export default function GlobalRadioApp() {
         setLoading(false);
       }
     },
-    [settings]
+    []
   );
 
   const refreshNowPlaying = useCallback(
@@ -221,40 +345,78 @@ export default function GlobalRadioApp() {
       setPlaybackStatus('loading');
       setPlaybackError('');
       setYoutubeMountedStationId('');
+      activePlaybackStationRef.current = station;
       void refreshNowPlaying(station);
 
       const audio = audioRef.current;
-      const streamUrl = station.url_resolved || station.url;
-      audio.src = streamUrl;
-      audio.load();
+      const streamCandidates = getStreamCandidates(station);
 
-      playbackTimerRef.current = window.setTimeout(() => {
-        if (audioRef.current && audioRef.current.readyState < 2) {
-          audioRef.current.pause();
-          setPlaybackStatus('error');
-          setPlaybackError('재생 준비 시간이 길어졌습니다. 다시 시도하거나 다른 방송을 선택해 주세요.');
-        }
-      }, 12_000);
+      if (isHlsStation(station) && !nativeHlsSupported) {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+        markPlaybackFailure(station);
+        setPlaybackStatus('error');
+        setPlaybackError('이 방송은 HLS(m3u8) 스트림이라 현재 브라우저의 HTML audio에서 직접 재생할 수 없습니다. 다른 방송을 선택해 주세요.');
+        return;
+      }
 
+      let lastError: unknown = null;
+      playbackAttemptRef.current = true;
       try {
-        await audio.play();
+        for (const streamUrl of streamCandidates) {
+          const watcher = createPlaybackStartWatcher(audio, 12_000);
+
+          try {
+            audio.src = streamUrl;
+            audio.load();
+            await audio.play();
+            await watcher.promise;
+            lastError = null;
+            break;
+          } catch (error) {
+            lastError = error;
+            audio.pause();
+
+            if (isAutoplayBlockedError(error)) {
+              break;
+            }
+          } finally {
+            watcher.cancel();
+          }
+        }
+
+        if (lastError) {
+          throw lastError;
+        }
+
+        if (streamCandidates.length === 0) {
+          throw new Error('missing_stream_url');
+        }
+
+        playbackAttemptRef.current = false;
         clearPlaybackTimer();
+        clearPlaybackFailure(station);
         setPlaybackStatus('playing');
         const nextRecent = upsertStoredStation(recent, station);
         setRecent(nextRecent);
         saveRecentStations(nextRecent);
       } catch (error) {
+        playbackAttemptRef.current = false;
         clearPlaybackTimer();
-        const isAutoplayBlock = error instanceof DOMException && ['NotAllowedError', 'AbortError'].includes(error.name);
+        const isAutoplayBlock = isAutoplayBlockedError(error);
+        if (!isAutoplayBlock) {
+          markPlaybackFailure(station);
+        }
         setPlaybackStatus(isAutoplayBlock ? 'autoplay_blocked' : 'error');
         setPlaybackError(
           isAutoplayBlock
             ? '브라우저 정책상 자동 재생이 막혔습니다. 재생 버튼을 한 번 더 눌러 주세요.'
-            : '이 라디오 스트림은 지금 재생할 수 없습니다. 다른 소스를 시도해 주세요.'
+            : '이 라디오 스트림은 지금 재생할 수 없습니다. 목록에서 다른 방송을 선택해 주세요.'
         );
       }
     },
-    [bringPlayerIntoView, clearPlaybackTimer, recent, refreshNowPlaying, selectedStation]
+    [bringPlayerIntoView, clearPlaybackFailure, clearPlaybackTimer, markPlaybackFailure, nativeHlsSupported, recent, refreshNowPlaying, selectedStation]
   );
 
   useEffect(() => {
@@ -307,6 +469,7 @@ export default function GlobalRadioApp() {
     }
 
     function handlePlaying() {
+      playbackAttemptRef.current = false;
       setPlaybackStatus('playing');
       setPlaybackError('');
     }
@@ -316,8 +479,16 @@ export default function GlobalRadioApp() {
     }
 
     function handleError() {
+      if (playbackAttemptRef.current) {
+        return;
+      }
+
+      if (activePlaybackStationRef.current) {
+        markPlaybackFailure(activePlaybackStationRef.current);
+      }
+
       setPlaybackStatus('error');
-      setPlaybackError('이 라디오 스트림은 지금 재생할 수 없습니다. 다른 소스를 시도해 주세요.');
+      setPlaybackError('이 라디오 스트림은 지금 재생할 수 없습니다. 목록에서 다른 방송을 선택해 주세요.');
     }
 
     audio.addEventListener('playing', handlePlaying);
@@ -329,7 +500,7 @@ export default function GlobalRadioApp() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
     };
-  }, []);
+  }, [markPlaybackFailure]);
 
   useEffect(() => {
     if (!activeStation || playbackStatus !== 'playing') {
@@ -524,6 +695,7 @@ export default function GlobalRadioApp() {
             active={selectedStation?.stationuuid === station.stationuuid}
             isFavorite={favoriteIds.has(station.stationuuid)}
             showYouTubeAlternate={settings.showYouTubeAlternates}
+            qualityOptions={qualityOptionsForStation(station)}
             onPlay={(nextStation) => void playDirect(nextStation)}
             onSelect={(nextStation) => {
               setSelectedStation(nextStation);
@@ -717,7 +889,6 @@ export default function GlobalRadioApp() {
 
             <section className="player-column" ref={playerColumnRef} aria-label="재생 정보" tabIndex={-1}>
               <DirectAudioPlayer
-                audioRef={audioRef}
                 station={currentPlaybackStation}
                 status={playbackStatus}
                 error={playbackError}
@@ -730,12 +901,15 @@ export default function GlobalRadioApp() {
                 station={selectedStation}
                 showYouTubeAlternate={settings.showYouTubeAlternates}
                 youtubeMounted={hasMountedYouTube}
+                qualityOptions={selectedStation ? qualityOptionsForStation(selectedStation) : undefined}
                 onMountYouTube={() => selectedStation && chooseYouTube(selectedStation)}
               />
             </section>
           </div>
         )}
       </main>
+
+      <audio ref={audioRef} className="audio-engine" preload="none" />
 
       {activeSourceType === 'radio' ? (
         <MiniPlayer
@@ -744,6 +918,7 @@ export default function GlobalRadioApp() {
           status={playbackStatus}
           isFavorite={Boolean(activeStation && favoriteIds.has(activeStation.stationuuid))}
           nowPlaying={nowPlaying}
+          qualityOptions={activeStation ? qualityOptionsForStation(activeStation) : undefined}
           onPlay={() => void playDirect(activeStation)}
           onPause={pauseDirect}
           onToggleFavorite={() => activeStation && toggleFavorite(activeStation)}

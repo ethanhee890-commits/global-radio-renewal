@@ -1,9 +1,16 @@
 import { Pause, Play, RotateCcw, Volume2 } from 'lucide-react';
-import { RefObject } from 'react';
 import type { PlaybackStatus, RadioStation } from '../types/station';
 
+const STATUS_LABELS: Record<PlaybackStatus, string> = {
+  idle: '대기',
+  loading: '연결 중',
+  playing: '재생 중',
+  paused: '일시정지',
+  error: '연결 실패',
+  autoplay_blocked: '재생 확인 필요'
+};
+
 export function DirectAudioPlayer({
-  audioRef,
   station,
   status,
   error,
@@ -11,7 +18,6 @@ export function DirectAudioPlayer({
   onPause,
   onRetry
 }: {
-  audioRef: RefObject<HTMLAudioElement>;
   station: RadioStation | null;
   status: PlaybackStatus;
   error: string;
@@ -47,7 +53,10 @@ export function DirectAudioPlayer({
         </button>
       </div>
 
-      <audio ref={audioRef} className="native-audio" controls preload="none" />
+      <div className={`stream-status-panel stream-status-${status}`} aria-live="polite">
+        <span>{STATUS_LABELS[status]}</span>
+        <strong>{station ? station.name : '방송국 미선택'}</strong>
+      </div>
 
       {status === 'autoplay_blocked' ? <p className="player-warning">브라우저가 자동 재생을 막았습니다. 재생 버튼을 한 번 더 눌러 주세요.</p> : null}
       {status === 'error' && error ? <p className="player-error">{error}</p> : null}

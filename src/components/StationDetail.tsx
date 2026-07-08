@@ -2,7 +2,7 @@ import { ExternalLink, RadioTower, ShieldCheck } from 'lucide-react';
 import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
 import { getPreferredSource } from '../lib/playbackSource';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { RadioStation } from '../types/station';
+import type { RadioStation, StationQualityOptions } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 import { YouTubeAlternatePlayer } from './YouTubeAlternatePlayer';
 
@@ -10,12 +10,14 @@ export function StationDetail({
   station,
   showYouTubeAlternate,
   youtubeMounted,
-  onMountYouTube
+  onMountYouTube,
+  qualityOptions
 }: {
   station: RadioStation | null;
   showYouTubeAlternate: boolean;
   youtubeMounted: boolean;
   onMountYouTube: () => void;
+  qualityOptions?: StationQualityOptions;
 }) {
   if (!station) {
     return (
@@ -27,7 +29,7 @@ export function StationDetail({
     );
   }
 
-  const quality = scoreStationQuality(station);
+  const quality = scoreStationQuality(station, qualityOptions);
   const alternate = getYouTubeAlternate(station.stationuuid);
   const recommendation = getPreferredSource(station, alternate);
 

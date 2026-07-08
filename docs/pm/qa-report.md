@@ -27,6 +27,10 @@ tags:
 - 히어로 카피, CTA, 상태 스트립, 내비게이션 라벨을 청취 행동 중심으로 재정리
 - `Preferences`, `Morning Radio`, `Now Playing` 등 보이는 영어 보조 라벨을 한국어 톤으로 정리
 - 모바일/태블릿에서 방송 선택 후 재생 정보 영역이 목록 아래에 묻히지 않도록 상단으로 이동
+- 모바일 상단 탭의 active pill 높이와 폭을 고정해 선택 상태가 과하게 커 보이지 않도록 정리
+- 루트에 영구 `<audio>` 엔진을 배치해 설정/저장/최근 탭 이동 중에도 direct stream 재생 상태가 유지되도록 수정
+- DirectAudioPlayer의 0:00 / 0:00 네이티브 컨트롤을 제거하고 앱 스타일의 재생 상태 패널로 대체
+- Chrome 등 HLS 직접 재생이 불안정한 브라우저에서는 HLS/m3u8 점수를 낮추고, 실제 재생 실패한 스트림은 로컬에서 실패 등급으로 재계산
 
 ## Automated Checks
 
@@ -67,6 +71,13 @@ tags:
   - after selecting first station at 676px: player panel ordered above list, scrolled to top of player panel
   - desktop 1200px: existing two-column layout preserved
   - horizontal overflow: none
+- Playback persistence and score correction check: PASS
+  - 360px nav buttons: equal width, 34px height, active tab no overlap
+  - DirectAudioPlayer no longer owns/remounts the `<audio>` element
+  - root `.audio-engine` remains mounted after switching to settings tab
+  - HLS station forced playback on Chrome: blocked before native audio attempt, player shows explicit HLS direct-playback error
+  - failed HLS station recalculates to `재생 실패 0`
+  - 676px viewport: audio engine mounted, direct player has no nested audio, horizontal overflow none
 - KEXP now-playing browser check: PASS
   - provider: `KEXP 공개 API`
   - sample track loaded during QA: `Won't Wait`

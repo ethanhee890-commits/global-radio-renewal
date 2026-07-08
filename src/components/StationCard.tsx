@@ -1,7 +1,7 @@
 import { ExternalLink, Heart, Play, Radio, Youtube } from 'lucide-react';
 import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { RadioStation } from '../types/station';
+import type { RadioStation, StationQualityOptions } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 
 function getStationInitial(name: string): string {
@@ -24,7 +24,8 @@ export function StationCard({
   onPlay,
   onSelect,
   onToggleFavorite,
-  onChooseYouTube
+  onChooseYouTube,
+  qualityOptions
 }: {
   station: RadioStation;
   isFavorite: boolean;
@@ -34,8 +35,9 @@ export function StationCard({
   onSelect: (station: RadioStation) => void;
   onToggleFavorite: (station: RadioStation) => void;
   onChooseYouTube: (station: RadioStation) => void;
+  qualityOptions?: StationQualityOptions;
 }) {
-  const quality = scoreStationQuality(station);
+  const quality = scoreStationQuality(station, qualityOptions);
   const alternate = getYouTubeAlternate(station.stationuuid);
   const tags = getTagList(station.tags);
 

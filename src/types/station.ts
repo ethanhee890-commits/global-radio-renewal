@@ -12,6 +12,11 @@ export type StationQualityInput = {
   url_resolved?: string;
 };
 
+export type StationQualityOptions = {
+  nativeHlsSupported?: boolean;
+  hasRecentPlaybackFailure?: boolean;
+};
+
 export type StationQuality = {
   score: number;
   grade: QualityGrade;

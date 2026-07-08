@@ -1,6 +1,6 @@
 import { Heart, Pause, Play, Radio, Youtube } from 'lucide-react';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { NowPlayingInfo, PlaybackStatus, RadioStation } from '../types/station';
+import type { NowPlayingInfo, PlaybackStatus, RadioStation, StationQualityOptions } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 
 export function MiniPlayer({
@@ -11,7 +11,8 @@ export function MiniPlayer({
   nowPlaying,
   onPlay,
   onPause,
-  onToggleFavorite
+  onToggleFavorite,
+  qualityOptions
 }: {
   station: RadioStation | null;
   sourceType: 'radio' | 'youtube';
@@ -21,12 +22,13 @@ export function MiniPlayer({
   onPlay: () => void;
   onPause: () => void;
   onToggleFavorite: () => void;
+  qualityOptions?: StationQualityOptions;
 }) {
   if (!station) {
     return null;
   }
 
-  const quality = scoreStationQuality(station);
+  const quality = scoreStationQuality(station, qualityOptions);
   const SourceIcon = sourceType === 'youtube' ? Youtube : Radio;
   const trackTitle = nowPlaying?.trackTitle;
   const artist = nowPlaying?.artist;

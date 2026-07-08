@@ -1,4 +1,4 @@
-import type { QualityGrade, StationQuality, StationQualityInput } from '../types/station';
+import type { QualityGrade, StationQuality, StationQualityInput, StationQualityOptions } from '../types/station';
 
 const QUALITY_LABELS: Record<QualityGrade, string> = {
   excellent: '매우 좋음',
@@ -17,17 +17,34 @@ function getStreamUrl(station: StationQualityInput): string {
   return station.url_resolved || station.url || '';
 }
 
+function isHlsStream(station: StationQualityInput): boolean {
+  const url = getStreamUrl(station).toLowerCase();
+  return station.hls === 1 || url.includes('.m3u8');
+}
+
 export function isHttpsStream(station: StationQualityInput): boolean {
   return getStreamUrl(station).toLowerCase().startsWith('https://');
 }
 
-export function scoreStationQuality(station: StationQualityInput): StationQuality {
+export function scoreStationQuality(station: StationQualityInput, options: StationQualityOptions = {}): StationQuality {
   const reasons: string[] = [];
   const codec = normalizeCodec(station.codec);
   const bitrate = Number(station.bitrate ?? 0);
   const hasBitrate = bitrate > 0;
   const isHttps = isHttpsStream(station);
   const lastcheckok = station.lastcheckok;
+  const isHls = isHlsStream(station);
+
+  if (options.hasRecentPlaybackFailure) {
+    return {
+      score: 0,
+      grade: 'failed',
+      label: QUALITY_LABELS.failed,
+      reasons: ['이 브라우저에서 최근 재생에 실패했습니다.'],
+      isHttps,
+      isLikelyPlayable: false
+    };
+  }
 
   if (lastcheckok === 0) {
     return {
@@ -61,9 +78,14 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
     reasons.push('HTTP 스트림');
   }
 
-  if (station.hls === 1) {
-    score += 8;
-    reasons.push('HLS 스트림');
+  if (isHls) {
+    if (options.nativeHlsSupported === false) {
+      score -= 34;
+      reasons.push('이 브라우저는 HLS 직접 재생 제한');
+    } else {
+      score += 8;
+      reasons.push('HLS 스트림');
+    }
   }
 
   if (codec.includes('aac') || codec.includes('opus')) {
@@ -110,7 +132,9 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
   const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
   let grade: QualityGrade = 'unknown';
 
-  if (!codec && !hasBitrate) {
+  if (isHls && options.nativeHlsSupported === false) {
+    grade = clampedScore >= 48 ? 'fair' : clampedScore >= 24 ? 'low' : 'failed';
+  } else if (!codec && !hasBitrate) {
     grade = clampedScore >= 50 ? 'fair' : 'unknown';
   } else if (clampedScore >= 80) {
     grade = 'excellent';
@@ -128,13 +152,13 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
     label: QUALITY_LABELS[grade],
     reasons,
     isHttps,
-    isLikelyPlayable: clampedScore >= 24 && station.ssl_error !== 1
+    isLikelyPlayable: clampedScore >= 24 && station.ssl_error !== 1 && !(isHls && options.nativeHlsSupported === false)
   };
 }
 
-export function compareStationsByQuality(a: StationQualityInput, b: StationQualityInput): number {
-  const qualityA = scoreStationQuality(a);
-  const qualityB = scoreStationQuality(b);
+export function compareStationsByQuality(a: StationQualityInput, b: StationQualityInput, options: StationQualityOptions = {}): number {
+  const qualityA = scoreStationQuality(a, options);
+  const qualityB = scoreStationQuality(b, options);
   if (qualityA.score !== qualityB.score) {
     return qualityB.score - qualityA.score;
   }
