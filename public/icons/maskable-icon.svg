@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="지구라디오 마스커블 아이콘">
+  <rect width="128" height="128" fill="#09111f"/>
+  <circle cx="64" cy="64" r="40" fill="#38bdf8"/>
+  <circle cx="64" cy="64" r="23" fill="#09111f"/>
+  <circle cx="64" cy="64" r="9" fill="#f59e0b"/>
+</svg>
