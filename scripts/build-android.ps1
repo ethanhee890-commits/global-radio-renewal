@@ -29,7 +29,14 @@ if ($env:JAVA_HOME) {
 Push-Location $root
 try {
   npm.cmd run android:sync
+  if ($LASTEXITCODE -ne 0) {
+    throw "android:sync failed with exit code $LASTEXITCODE"
+  }
+
   & (Join-Path $root 'android\gradlew.bat') -p (Join-Path $root 'android') $Task
+  if ($LASTEXITCODE -ne 0) {
+    throw "Gradle $Task failed with exit code $LASTEXITCODE"
+  }
 } finally {
   Pop-Location
 }
