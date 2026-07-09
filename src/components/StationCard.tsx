@@ -1,6 +1,7 @@
 import { ExternalLink, Heart, Play, Radio, Trash2, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
+import { shouldOfferYouTubeAlternate } from '../lib/playbackSource';
 import { scoreStationQuality } from '../lib/qualityScore';
 import { getSafeNetworkUrl } from '../lib/urlSafety';
 import type { RadioStation } from '../types/station';
@@ -111,7 +112,7 @@ export function StationCard({
         ) : null}
       </div>
 
-      {showYouTubeAlternate && alternate && (quality.grade === 'low' || quality.grade === 'failed') ? (
+      {showYouTubeAlternate && shouldOfferYouTubeAlternate(station, alternate) ? (
         <button className="youtube-inline-cta" type="button" onClick={() => onChooseYouTube(station)}>
           <Youtube aria-hidden="true" size={17} />
           YouTube 공식 라이브로 듣기

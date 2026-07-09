@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getYouTubeAlternate, getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
-import { getPreferredSource } from '../lib/playbackSource';
+import { getPreferredSource, shouldOfferYouTubeAlternate } from '../lib/playbackSource';
 import type { RadioStation } from '../types/station';
 
 const lowQualityStation: RadioStation = {
@@ -60,5 +60,42 @@ describe('getPreferredSource', () => {
 
     expect(alternate?.id).toBe('yt-mbc-radio-official');
     expect(alternate?.youtubeChannelId).toBe('UCKNZsAeQXpvI-Mpoc0ZKhsA');
+  });
+
+  it('does not offer the visible YouTube player while a direct stream is still good', () => {
+    const station: RadioStation = {
+      stationuuid: 'seed-jp-shonan-beach-fm',
+      name: 'Shonan Beach FM 78.9',
+      url: 'https://shonanbeachfm.out.airtime.pro:8000/shonanbeachfm_a',
+      url_resolved: 'https://shonanbeachfm.out.airtime.pro:8000/shonanbeachfm_a',
+      codec: 'MP3',
+      bitrate: 128,
+      hls: 0,
+      lastcheckok: 1,
+      ssl_error: 0
+    };
+    const alternate = getYouTubeAlternateForStation(station);
+
+    expect(alternate).not.toBeNull();
+    expect(shouldOfferYouTubeAlternate(station, alternate)).toBe(false);
+    expect(getPreferredSource(station, alternate).preferred).toBe('direct');
+  });
+
+  it('offers the verified YouTube alternate after a local direct playback failure', () => {
+    const failedStation: RadioStation = {
+      stationuuid: 'seed-jp-shonan-beach-fm',
+      name: 'Shonan Beach FM 78.9',
+      url: 'https://shonanbeachfm.out.airtime.pro:8000/shonanbeachfm_a',
+      url_resolved: 'https://shonanbeachfm.out.airtime.pro:8000/shonanbeachfm_a',
+      codec: 'MP3',
+      bitrate: 128,
+      hls: 0,
+      lastcheckok: 0,
+      ssl_error: 0
+    };
+    const alternate = getYouTubeAlternateForStation(failedStation);
+
+    expect(shouldOfferYouTubeAlternate(failedStation, alternate)).toBe(true);
+    expect(getPreferredSource(failedStation, alternate).preferred).toBe('youtube_alternate');
   });
 });

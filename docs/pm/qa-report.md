@@ -2,7 +2,7 @@
 type: qa-report
 project: "GlobalRadioPWA"
 status: active
-last_updated: "2026-07-08"
+last_updated: "2026-07-09"
 tags:
   - qa
   - global-radio
@@ -17,15 +17,18 @@ tags:
 - 일본 빠른 진입 CTA, 일본 검증 안내, NHK/공개 FM quick filter
 - Shonan Beach FM 공식 YouTube Live Cam visible iframe 대체 소스
 - radiko 우회/비공식 NHK 미러 제외
+- 국가가 전체일 때 일본 전용 장르가 노출되지 않도록 필터 옵션 관계 검증
+- 직접 라디오 스트림이 양호한 상태에서는 YouTube 대체 플레이어를 상시 노출하지 않고, 낮은 품질 또는 실패 상태에서만 노출
+- 런타임 YouTube 금지 패턴과 빌드 산출물 public asset 경로를 security scan에 추가
 
 ## Automated Checks
 
 - `npm.cmd run verify`: PASS
   - lint: PASS
   - typecheck: PASS
-  - vitest: 10 files / 38 tests PASS
+  - vitest: 12 files / 40 tests PASS
   - build: PASS
-  - security scan: PASS
+  - security scan: PASS, includes runtime YouTube policy scan and built `dist` public asset path scan
 - `npm.cmd audit --omit=dev`: PASS, production vulnerabilities 0
 
 ## Browser Checks
@@ -61,6 +64,7 @@ tags:
 
 ## Not Checked
 
+- Current in-app browser rendered QA for this follow-up pass: connection/documentation bootstrap timed out after 90 seconds
 - iOS Safari 실기기 direct audio playback
 - 일본 내 radiko 앱/웹 권역 재생
 - 장시간 스트림 안정성

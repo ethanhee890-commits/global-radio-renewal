@@ -1,6 +1,6 @@
 import { ExternalLink, RadioTower, ShieldCheck } from 'lucide-react';
 import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
-import { getPreferredSource } from '../lib/playbackSource';
+import { getPreferredSource, shouldOfferYouTubeAlternate } from '../lib/playbackSource';
 import { scoreStationQuality } from '../lib/qualityScore';
 import { getSafeNetworkUrl } from '../lib/urlSafety';
 import type { RadioStation } from '../types/station';
@@ -32,6 +32,7 @@ export function StationDetail({
   const alternate = getYouTubeAlternateForStation(station);
   const recommendation = getPreferredSource(station, alternate);
   const homepageUrl = getSafeNetworkUrl(station.homepage);
+  const canShowYouTubePlayer = Boolean(showYouTubeAlternate && shouldOfferYouTubeAlternate(station, alternate));
 
   return (
     <aside className="station-detail">
@@ -82,7 +83,7 @@ export function StationDetail({
         </a>
       ) : null}
 
-      {showYouTubeAlternate && alternate ? (
+      {canShowYouTubePlayer && alternate ? (
         <YouTubeAlternatePlayer station={station} source={alternate} mounted={youtubeMounted} onMount={onMountYouTube} />
       ) : null}
     </aside>

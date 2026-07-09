@@ -4,6 +4,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const ignoredDirectories = new Set(['.git', '.tools', '.playwright-cli', 'android', 'assets', 'dist', 'ios', 'node_modules', 'output', 'test-results']);
 const findings = [];
+const runtimeFilePattern = /\.(cjs|js|json|ts|tsx|html|css|webmanifest)$/;
 
 function readText(filePath) {
   try {
@@ -44,6 +45,80 @@ function walk(current) {
 }
 
 walk(root);
+
+function walkRuntimeFiles(current, visitor) {
+  if (!fs.existsSync(current)) {
+    return;
+  }
+
+  const stat = fs.statSync(current);
+  if (stat.isDirectory()) {
+    if (['.git', 'node_modules', 'coverage', '.vite'].includes(path.basename(current))) {
+      return;
+    }
+
+    for (const child of fs.readdirSync(current)) {
+      walkRuntimeFiles(path.join(current, child), visitor);
+    }
+    return;
+  }
+
+  const relativePath = path.relative(root, current).replace(/\\/g, '/');
+  if (runtimeFilePattern.test(relativePath)) {
+    visitor(current, relativePath, readText(current));
+  }
+}
+
+function assertRuntimePolicy(_filePath, relativePath, text) {
+  if (relativePath === 'scripts/security-scan.cjs' || relativePath.startsWith('src/test/')) {
+    return;
+  }
+
+  if (/(?:yt-dlp|youtube-dl|ytdl-core|\bytdl\b|youtube\s+audio\s+extraction|audio\s+extraction)/i.test(text)) {
+    findings.push(`${relativePath}: forbidden YouTube extraction/tooling pattern found in runtime code or asset.`);
+  }
+
+  if (/(?:src|href)=["']\/(?:icons\/|manifest\.webmanifest)/.test(text)) {
+    findings.push(`${relativePath}: public assets must not be referenced from the domain root.`);
+  }
+
+  if (/"(?:src|start_url|scope)"\s*:\s*"\/(?:icons\/|manifest\.webmanifest)?/.test(text)) {
+    findings.push(`${relativePath}: PWA manifest paths must be relative, not root-relative.`);
+  }
+}
+
+function assertRelativeManifest(manifestPath) {
+  if (!fs.existsSync(manifestPath)) {
+    return;
+  }
+
+  const relativePath = path.relative(root, manifestPath).replace(/\\/g, '/');
+  let manifest;
+  try {
+    manifest = JSON.parse(readText(manifestPath));
+  } catch {
+    findings.push(`${relativePath}: manifest must be valid JSON.`);
+    return;
+  }
+
+  for (const key of ['start_url', 'scope']) {
+    if (typeof manifest[key] === 'string' && manifest[key].startsWith('/')) {
+      findings.push(`${relativePath}: ${key} must be relative for GitHub Pages/PWA subpath installs.`);
+    }
+  }
+
+  for (const icon of Array.isArray(manifest.icons) ? manifest.icons : []) {
+    if (typeof icon?.src === 'string' && icon.src.startsWith('/')) {
+      findings.push(`${relativePath}: icon src must be relative for GitHub Pages/PWA subpath installs.`);
+    }
+  }
+}
+
+for (const runtimeRoot of ['src', 'public-radio', 'scripts', 'dist']) {
+  walkRuntimeFiles(path.join(root, runtimeRoot), assertRuntimePolicy);
+}
+assertRelativeManifest(path.join(root, 'public-radio', 'manifest.webmanifest'));
+assertRelativeManifest(path.join(root, 'dist', 'manifest.webmanifest'));
 
 const gitignore = readText(path.join(root, '.gitignore'));
 for (const requiredIgnore of ['.env.local', '.env.*.local', 'node_modules/', 'dist/']) {
