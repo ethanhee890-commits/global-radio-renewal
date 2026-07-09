@@ -870,3 +870,64 @@ tags:
 - iOS physical-device install
 - iOS Safari direct stream playback rate
 - Long-running background playback and alarm behavior on real devices
+
+## 2026-07-10 QA13 Bottom Sheet Drag Follow-up
+
+### Finding
+
+- The current-player bottom sheet could stay open after a downward drag when the pointer release was not delivered to the narrow drag/header element.
+- This made the native-style sheet feel stuck even though the dimmed backdrop and close button still worked.
+
+### Fixed
+
+- The bottom sheet shell now also receives pointer move, pointer up, and pointer cancel events as a fallback.
+- Drag start remains limited to the sheet drag/header area, but the release can be captured reliably by the sheet container.
+- Added a regression test that asserts the bottom sheet shell keeps the fallback drag handlers.
+
+### Automated Checks
+
+- `npm.cmd test -- globalRadioSheetDrag.test.ts`: PASS, 1 file / 1 test
+- `npm.cmd run typecheck`: PASS
+- `npm.cmd run verify`: PASS
+  - lint: PASS
+  - typecheck: PASS
+  - Vitest: PASS, 16 files / 59 tests
+  - production build: PASS
+  - security scan: PASS
+- `npm.cmd run android:debug`: PASS
+
+### Rendered Local QA
+
+- URL: `http://127.0.0.1:5179/`
+- Mobile 390px:
+  - Page title: `지구라디오`
+  - Station cards loaded: 168
+  - Bottom navigation widths: equal, 82px each
+  - Horizontal overflow: none
+  - Current-player sheet close button: 40px x 40px
+  - Downward drag from the sheet grabber closes the sheet: yes
+  - Mini player remains visible after sheet drag-close: yes
+  - Persistent audio element remains mounted after sheet drag-close: yes
+  - Console warning/error: none
+- Mobile 360px:
+  - Station cards loaded: 168
+  - Filter trigger count: 4
+  - Bottom navigation widths: equal, 75px each
+  - Search input and country filter overlap: no
+  - Horizontal overflow: none
+  - Console warning/error: none
+
+### Package Evidence
+
+- Latest APK release asset: `jigu-radio-latest-debug.apk`
+- QA13 APK release asset: `jigu-radio-debug-2026-07-10-qa13.apk`
+- APK size: `28602704`
+- APK SHA-256: `A909578E53B3179B779A6BC3860CB29F5C2F8EFFF15C5DFF36D97414000A7521`
+- Release asset HEAD checks: PASS, HTTP 200, `application/vnd.android.package-archive`
+
+### Not Checked
+
+- Android physical-device install and audio output from the QA13 APK
+- iOS physical-device install
+- iOS Safari direct stream playback rate
+- Long-running background playback and alarm behavior on real devices

@@ -1332,6 +1332,9 @@ export default function GlobalRadioApp() {
             aria-modal="true"
             aria-label="현재 재생 중인 방송"
             onClick={(event) => event.stopPropagation()}
+            onPointerMove={moveSheetDrag}
+            onPointerUp={endSheetDrag}
+            onPointerCancel={endSheetDrag}
             style={{ transform: sheetDragOffset > 0 ? `translateY(${sheetDragOffset}px)` : undefined }}
           >
             <div
