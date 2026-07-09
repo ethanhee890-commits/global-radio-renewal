@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.text.TextUtils;
 
 import java.util.Calendar;
 
@@ -25,6 +26,11 @@ public final class NativeRadioAlarmScheduler {
     }
 
     public static boolean saveAndSchedule(Context context, int hour, int minute, String url, String title, String subtitle) {
+        if (!isHttpUrl(url)) {
+            cancel(context);
+            return false;
+        }
+
         if (!canScheduleExactAlarms(context)) {
             cancel(context);
             return false;
@@ -53,7 +59,8 @@ public final class NativeRadioAlarmScheduler {
         }
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager == null || !canScheduleExactAlarms(context)) {
+        if (alarmManager == null || !canScheduleExactAlarms(context) || !isHttpUrl(preferences.getString(KEY_URL, ""))) {
+            cancel(context);
             return false;
         }
 
@@ -109,6 +116,10 @@ public final class NativeRadioAlarmScheduler {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
         return calendar.getTimeInMillis();
+    }
+
+    public static boolean isHttpUrl(String url) {
+        return !TextUtils.isEmpty(url) && (url.startsWith("https://") || url.startsWith("http://"));
     }
 
     private static PendingIntent alarmIntent(Context context) {

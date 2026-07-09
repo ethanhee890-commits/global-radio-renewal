@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.text.TextUtils;
 
 public class NativeRadioAlarmReceiver extends BroadcastReceiver {
     @Override
@@ -16,7 +15,8 @@ public class NativeRadioAlarmReceiver extends BroadcastReceiver {
         }
 
         String url = preferences.getString("url", "");
-        if (TextUtils.isEmpty(url)) {
+        if (!NativeRadioAlarmScheduler.isHttpUrl(url)) {
+            NativeRadioAlarmScheduler.cancel(context);
             return;
         }
 

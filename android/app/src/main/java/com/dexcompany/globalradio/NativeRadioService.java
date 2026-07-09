@@ -276,14 +276,14 @@ public class NativeRadioService extends Service {
 
         String contentText = TextUtils.isEmpty(statusText) ? currentSubtitle : statusText;
         return builder
-            .setSmallIcon(getApplicationInfo().icon)
+            .setSmallIcon(R.drawable.ic_stat_radio)
             .setContentTitle(TextUtils.isEmpty(currentTitle) ? "Jigu Radio" : currentTitle)
             .setContentText(contentText)
             .setContentIntent(contentPendingIntent)
             .setOngoing(isPlaying || "loading".equals(status))
             .setOnlyAlertOnce(true)
-            .addAction(getApplicationInfo().icon, isPlaying ? "Pause" : "Play", togglePendingIntent)
-            .addAction(getApplicationInfo().icon, "Stop", stopPendingIntent)
+            .addAction(R.drawable.ic_stat_radio, isPlaying ? "Pause" : "Play", togglePendingIntent)
+            .addAction(R.drawable.ic_stat_radio, "Stop", stopPendingIntent)
             .build();
     }
 

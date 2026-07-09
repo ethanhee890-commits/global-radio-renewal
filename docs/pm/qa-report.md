@@ -448,3 +448,38 @@ tags:
 - iOS Safari physical-device direct stream playback
 - iOS native archive/signing and physical-device smoke test
 - Long-running stream stability across multiple stations
+
+## 2026-07-10 Android Native QA Follow-up 2
+
+### Fixed
+
+- Android alarm recovery now validates the stored stream URL before scheduling. If stored alarm data is corrupted, empty, or not `http/https`, native alarm state is cleared instead of scheduling a no-op alarm.
+- Android alarm receiver now clears invalid stored alarm data when it fires with an unusable stream URL.
+- Android playback notification now uses the dedicated monochrome `ic_stat_radio` drawable for the small notification icon and action icons instead of the launcher icon. This avoids poor or blank status-bar rendering on Android notification surfaces.
+
+### Automated Checks
+
+- `$env:JAVA_HOME='D:\Program Files\Android\Android Studio\jbr'; .\gradlew.bat :app:compileDebugJavaWithJavac --console=plain`: PASS
+- `$env:JAVA_HOME='D:\Program Files\Android\Android Studio\jbr'; .\gradlew.bat :app:testDebugUnitTest --console=plain`: PASS
+- `$env:JAVA_HOME='D:\Program Files\Android\Android Studio\jbr'; .\gradlew.bat :app:lintDebug --console=plain`: PASS
+  - `lint-results-debug.xml` contained 0 `<issue>` entries
+- `npm.cmd run verify`: PASS
+  - lint, typecheck, Vitest, production build, and security scan all passed
+- `npm.cmd audit --audit-level=moderate`: PASS, 0 vulnerabilities
+- `npm.cmd run android:debug`: PASS, debug APK build completed with latest native code
+
+### Evidence
+
+- Latest local debug APK: `release\global-radio-android-2026-07-10-qa5\jigu-radio-debug-2026-07-10-qa5.apk`
+- Latest local debug ZIP: `release\global-radio-android-2026-07-10-qa5\jigu-radio-debug-2026-07-10-qa5.zip`
+- APK SHA-256: `89A537B0AE7FE254042EC6AC7285CF82C7045982B2407174072BABB2DA5915EC`
+
+### Not Checked
+
+- Android emulator or physical-device install/launch smoke test, because no device/emulator was connected and the SDK does not currently include the emulator package
+- Real Android notification tray rendering of the updated `ic_stat_radio` icon
+- Real Android exact alarm permission screen behavior
+- Real scheduled alarm playback at wall-clock time on Android
+- iOS Safari physical-device direct stream playback
+- iOS native archive/signing and physical-device smoke test
+- Long-running stream stability across multiple stations
