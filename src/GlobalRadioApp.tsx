@@ -40,6 +40,7 @@ import { Toast, type ToastState } from './components/Toast';
 import './global-radio.css';
 import { getSafeNetworkUrl } from './lib/urlSafety';
 import { getPublicAssetUrl } from './lib/publicAssets';
+import { replaceStationById, replaceStoredStationById, withPlaybackCheckStatus } from './lib/playbackState';
 
 type ViewKey = 'discover' | 'favorites' | 'recent' | 'settings';
 
@@ -330,6 +331,37 @@ export default function GlobalRadioApp() {
   const alarmHelperCopy = getAlarmHelperCopy(nativePlatform);
   const alarmStation = useMemo(() => (settings.alarmStation ? stationFromStored(settings.alarmStation) : null), [settings.alarmStation]);
   const alarmTimeLabel = formatAlarmTime(settings.alarmHour, settings.alarmMinute);
+  const applyStationPlaybackCheckStatus = useCallback((station: RadioStation, lastcheckok: 0 | 1): RadioStation => {
+    const nextStation = withPlaybackCheckStatus(station, lastcheckok);
+
+    setStations((current) => replaceStationById(current, nextStation));
+    setSelectedStation((current) => (current?.stationuuid === station.stationuuid ? nextStation : current));
+    setActiveStation((current) => (current?.stationuuid === station.stationuuid ? nextStation : current));
+    setFavorites((current) => {
+      const next = replaceStoredStationById(current, nextStation);
+      if (next !== current) {
+        saveFavoriteStations(next);
+      }
+      return next;
+    });
+    setRecent((current) => {
+      const next = replaceStoredStationById(current, nextStation);
+      if (next !== current) {
+        saveRecentStations(next);
+      }
+      return next;
+    });
+
+    return nextStation;
+  }, []);
+  const markStationPlaybackFailed = useCallback(
+    (station: RadioStation): RadioStation => applyStationPlaybackCheckStatus(station, 0),
+    [applyStationPlaybackCheckStatus]
+  );
+  const markStationPlaybackStarted = useCallback(
+    (station: RadioStation): RadioStation => applyStationPlaybackCheckStatus(station, 1),
+    [applyStationPlaybackCheckStatus]
+  );
   const isJapanFocused =
     view === 'discover' &&
     (filters.country === 'Japan' ||
@@ -470,7 +502,7 @@ export default function GlobalRadioApp() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
     };
-  }, []);
+  }, [markStationPlaybackFailed]);
 
   useEffect(() => {
     if (!nativePlaybackEnabled || activeSourceType !== 'radio' || !activeStation) {
@@ -509,7 +541,7 @@ export default function GlobalRadioApp() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [activeSourceType, activeStation, nativePlaybackEnabled]);
+  }, [activeSourceType, activeStation, markStationPlaybackFailed, nativePlaybackEnabled]);
 
   useEffect(() => {
     if (!playerSheetOpen) {
@@ -591,14 +623,6 @@ export default function GlobalRadioApp() {
 
   function showToast(message: string, tone: ToastState['tone'] = 'info') {
     setToast({ tone, message });
-  }
-
-  function markStationPlaybackFailed(station: RadioStation) {
-    const failedStation: RadioStation = { ...station, lastcheckok: 0 };
-
-    setStations((current) => current.map((item) => (item.stationuuid === station.stationuuid ? failedStation : item)));
-    setSelectedStation((current) => (current?.stationuuid === station.stationuuid ? failedStation : current));
-    setActiveStation((current) => (current?.stationuuid === station.stationuuid ? failedStation : current));
   }
 
   function confirmPermissionPrompt() {
@@ -721,7 +745,8 @@ export default function GlobalRadioApp() {
         await playNativeRadio(station);
         setPlaybackStatus('loading');
         setPlayerSheetOpen(true);
-        const nextRecent = upsertStoredStation(recent, station);
+        const startedStation = markStationPlaybackStarted(station);
+        const nextRecent = upsertStoredStation(recent, startedStation);
         setRecent(nextRecent);
         saveRecentStations(nextRecent);
       } catch {
@@ -752,7 +777,8 @@ export default function GlobalRadioApp() {
       await audio.play();
       clearPlaybackTimer();
       setPlaybackStatus('playing');
-      const nextRecent = upsertStoredStation(recent, station);
+      const startedStation = markStationPlaybackStarted(station);
+      const nextRecent = upsertStoredStation(recent, startedStation);
       setRecent(nextRecent);
       saveRecentStations(nextRecent);
     } catch (error) {

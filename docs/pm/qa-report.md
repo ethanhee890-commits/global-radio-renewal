@@ -2,7 +2,7 @@
 type: qa-report
 project: "GlobalRadioPWA"
 status: active
-last_updated: "2026-07-09"
+last_updated: "2026-07-10"
 tags:
   - qa
   - global-radio
@@ -87,3 +87,60 @@ tags:
 - iOS Safari 실기기 direct audio playback
 - 일본 내 radiko 앱/웹 권역 재생
 - 장시간 스트림 안정성
+
+## 2026-07-10 Follow-up QA
+
+### Fixed
+
+- 재생 실패 또는 재생 성공 상태가 검색 목록에만 반영되고, 같은 방송이 최근 들은 방송/즐겨찾기에 저장돼 있으면 저장 목록에는 이전 품질 상태가 남을 수 있는 문제를 수정했습니다.
+- 직접 스트림 실패 후에는 저장 목록에서도 `lastcheckok: 0`으로 갱신되어 품질 배지가 `재생 실패`로 바뀌고, 검증된 공식 YouTube 대체 소스가 있는 경우 대체 버튼이 일관되게 노출됩니다.
+- 이후 직접 재생이 성공하면 저장 목록도 `lastcheckok: 1`로 회복되어 오래된 실패 상태가 계속 남지 않도록 했습니다.
+
+### Automated Checks
+
+- `npm.cmd run test -- playbackState`: PASS, 4 tests
+- `npm.cmd run verify`: PASS
+  - lint: PASS
+  - typecheck: PASS
+  - vitest: 13 files / 45 tests PASS
+  - build: PASS
+  - security scan: PASS
+- `npm.cmd audit --audit-level=moderate`: PASS, vulnerabilities 0
+
+### Rendered Browser QA
+
+- In-app Browser path: FAILED
+  - Browser runtime connection timed out after 120 seconds and reset.
+  - Fallback QA used Playwright with system Chrome.
+- Desktop 1280px Chrome: PASS
+  - App title renders as `지구라디오`
+  - Station cards render
+  - Horizontal overflow: none
+  - Console warning/error: none
+  - Request failures: none
+- Mobile 360px Chrome: PASS
+  - Station cards render
+  - Bottom navigation widths equal: `79, 79, 79, 79`
+  - Search input padding left/right equal: `16px / 16px`
+  - Search input and country filter do not overlap
+  - Horizontal overflow: none
+  - Console warning/error: none
+  - Request failures: none
+- Mobile 390px Chrome: PASS
+  - Station cards render
+  - Bottom navigation widths equal: `86, 86, 86, 86`
+  - Search input padding left/right equal: `16px / 16px`
+  - Search input and country filter do not overlap
+  - `japan` search maps to `Japan (JP)`
+  - Changing country to Spain clears the conflicting `japan` query
+  - `Lofi Girl Radio Demo` shows official YouTube alternate CTA
+  - YouTube iframe is visible in the bottom sheet, 288px x 220px
+  - Hidden YouTube iframe count: 0
+  - Closing the bottom sheet unmounts the iframe
+  - Horizontal overflow: none
+  - Console warning/error: none
+
+### Screenshots
+
+- Mobile home: `C:\Users\rooki\AppData\Local\Temp\global-radio-qa\mobile-home-390.png`
+- Visible YouTube iframe: `C:\Users\rooki\AppData\Local\Temp\global-radio-qa\mobile-youtube-iframe-visible-390.png`

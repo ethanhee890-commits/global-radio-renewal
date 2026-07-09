@@ -1,0 +1,38 @@
+import type { RadioStation, StoredStation } from '../types/station';
+import { toStoredStation } from './globalRadioStorage';
+
+export function withPlaybackCheckStatus(station: RadioStation, lastcheckok: 0 | 1): RadioStation {
+  return {
+    ...station,
+    lastcheckok
+  };
+}
+
+export function replaceStationById(stations: RadioStation[], station: RadioStation): RadioStation[] {
+  let changed = false;
+  const nextStations = stations.map((item) => {
+    if (item.stationuuid !== station.stationuuid) {
+      return item;
+    }
+
+    changed = true;
+    return station;
+  });
+
+  return changed ? nextStations : stations;
+}
+
+export function replaceStoredStationById(stations: StoredStation[], station: RadioStation): StoredStation[] {
+  let changed = false;
+  const storedStation = toStoredStation(station);
+  const nextStations = stations.map((item) => {
+    if (item.stationuuid !== station.stationuuid) {
+      return item;
+    }
+
+    changed = true;
+    return storedStation;
+  });
+
+  return changed ? nextStations : stations;
+}
