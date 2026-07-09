@@ -11,11 +11,13 @@ export function StationDetail({
   station,
   showYouTubeAlternate,
   youtubeMounted,
+  hideYouTubePlayer = false,
   onMountYouTube
 }: {
   station: RadioStation | null;
   showYouTubeAlternate: boolean;
   youtubeMounted: boolean;
+  hideYouTubePlayer?: boolean;
   onMountYouTube: () => void;
 }) {
   if (!station) {
@@ -32,7 +34,7 @@ export function StationDetail({
   const alternate = getYouTubeAlternateForStation(station);
   const recommendation = getPreferredSource(station, alternate);
   const homepageUrl = getSafeNetworkUrl(station.homepage);
-  const canShowYouTubePlayer = Boolean(showYouTubeAlternate && alternate && (youtubeMounted || shouldOfferYouTubeAlternate(station, alternate)));
+  const canShowYouTubePlayer = Boolean(!hideYouTubePlayer && showYouTubeAlternate && alternate && (youtubeMounted || shouldOfferYouTubeAlternate(station, alternate)));
 
   return (
     <aside className="station-detail">

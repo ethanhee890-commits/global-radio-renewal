@@ -37,6 +37,7 @@ import { StationCard } from './components/StationCard';
 import { StationDetail } from './components/StationDetail';
 import { PermissionPrompt, type PermissionPromptKind } from './components/PermissionPrompt';
 import { Toast, type ToastState } from './components/Toast';
+import { YouTubeAlternatePlayer } from './components/YouTubeAlternatePlayer';
 import './global-radio.css';
 import { getSafeNetworkUrl } from './lib/urlSafety';
 import { getPublicAssetUrl } from './lib/publicAssets';
@@ -851,7 +852,6 @@ export default function GlobalRadioApp() {
     setYoutubeMountedStationId(station.stationuuid);
     setSheetDragOffset(0);
     setPlayerSheetOpen(true);
-    showToast('YouTube 플레이어를 표시했어요. 플레이어 안에서 재생을 눌러주세요.', 'success');
   }
 
   function toggleFavorite(station: RadioStation) {
@@ -1151,7 +1151,7 @@ export default function GlobalRadioApp() {
 
           </section>
         ) : (
-          <div className="radio-workspace">
+          <div className={`radio-workspace ${view === 'discover' ? '' : 'is-list-only'}`}>
             <section className="radio-list-panel">
               {view === 'discover' ? (
                 <>
@@ -1201,25 +1201,27 @@ export default function GlobalRadioApp() {
               {renderStationList()}
             </section>
 
-            <section className="player-column">
-              <DirectAudioPlayer
-                station={activeStation ?? selectedStation}
-                status={playbackStatus}
-                error={playbackError}
-                onPlay={() => void playDirect(activeStation ?? selectedStation)}
-                onPause={pauseDirect}
-                onRetry={() => void playDirect(activeStation ?? selectedStation)}
-                onUseYouTube={() => sheetStation && chooseYouTube(sheetStation)}
-                showYouTubeFallback={Boolean(settings.showYouTubeAlternates && playerYouTubeAlternate)}
-                nativePlayback={nativePlaybackEnabled}
-              />
-              <StationDetail
-                station={selectedStation}
-                showYouTubeAlternate={settings.showYouTubeAlternates}
-                youtubeMounted={hasMountedYouTube && !playerSheetOpen}
-                onMountYouTube={() => selectedStation && chooseYouTube(selectedStation)}
-              />
-            </section>
+            {view === 'discover' ? (
+              <section className="player-column">
+                <DirectAudioPlayer
+                  station={activeStation ?? selectedStation}
+                  status={playbackStatus}
+                  error={playbackError}
+                  onPlay={() => void playDirect(activeStation ?? selectedStation)}
+                  onPause={pauseDirect}
+                  onRetry={() => void playDirect(activeStation ?? selectedStation)}
+                  onUseYouTube={() => sheetStation && chooseYouTube(sheetStation)}
+                  showYouTubeFallback={Boolean(settings.showYouTubeAlternates && playerYouTubeAlternate)}
+                  nativePlayback={nativePlaybackEnabled}
+                />
+                <StationDetail
+                  station={selectedStation}
+                  showYouTubeAlternate={settings.showYouTubeAlternates}
+                  youtubeMounted={hasMountedYouTube && !playerSheetOpen}
+                  onMountYouTube={() => selectedStation && chooseYouTube(selectedStation)}
+                />
+              </section>
+            ) : null}
           </div>
         )}
       </main>
@@ -1303,6 +1305,14 @@ export default function GlobalRadioApp() {
               </button>
             </div>
             <div className="sheet-body">
+              {activeSourceType === 'youtube' && playerYouTubeAlternate ? (
+                <YouTubeAlternatePlayer
+                  station={sheetStation}
+                  source={playerYouTubeAlternate}
+                  mounted={sheetHasMountedYouTube}
+                  onMount={() => sheetStation && chooseYouTube(sheetStation)}
+                />
+              ) : null}
               <DirectAudioPlayer
                 station={sheetStation}
                 status={playbackStatus}
@@ -1318,6 +1328,7 @@ export default function GlobalRadioApp() {
                 station={sheetStation}
                 showYouTubeAlternate={settings.showYouTubeAlternates}
                 youtubeMounted={sheetHasMountedYouTube}
+                hideYouTubePlayer={activeSourceType === 'youtube'}
                 onMountYouTube={() => sheetStation && chooseYouTube(sheetStation)}
               />
             </div>

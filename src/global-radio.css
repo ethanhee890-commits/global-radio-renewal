@@ -222,6 +222,10 @@ a:focus-visible {
   align-items: start;
 }
 
+.radio-workspace.is-list-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .radio-list-panel,
 .player-column,
 .settings-panel {

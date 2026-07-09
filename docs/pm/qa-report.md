@@ -273,6 +273,7 @@ tags:
 - `npm.cmd run verify`: PASS
   - lint, typecheck, Vitest, production build, security scan all passed
   - Vitest suite: 15 files / 51 tests
+- `npm.cmd run android:debug`: PASS, debug APK build completed with latest web assets
 - `npm.cmd audit --audit-level=moderate`: PASS, 0 vulnerabilities
 - `npm.cmd run android:debug`: PASS, debug APK build completed
 
@@ -295,3 +296,59 @@ tags:
 
 - Real Android exact alarm permission screen behavior on a physical device
 - Real scheduled alarm playback at wall-clock time on Android
+
+## 2026-07-10 Continued Mobile QA
+
+### Fixed
+
+- Saved and recent tabs no longer render the in-page radio player and station detail panel. Current playback remains available through the bottom mini player and bottom sheet, avoiding duplicate playback information on list-only tabs.
+- When a user chooses an official YouTube alternate source, the bottom sheet now places the visible YouTube player at the top of the sheet instead of burying it below radio details.
+- Removed the redundant YouTube success toast that appeared behind the bottom sheet and visually competed with the sheet content.
+
+### Automated Checks
+
+- `npm.cmd run verify`: PASS
+  - lint, typecheck, Vitest, production build, security scan all passed
+  - Vitest suite: 15 files / 51 tests
+
+### Rendered Browser QA
+
+- In-app Browser path: FAILED
+  - Browser runtime connection timed out after 120 seconds and reset.
+  - Fallback QA used Playwright with system Chrome.
+- Mobile 360px and 390px Chrome via Playwright/system Chrome: PASS
+  - Home page identity: `지구라디오`
+  - Horizontal overflow: none
+  - Bottom navigation widths equal at both mobile widths
+  - Search input, search button, and country filter do not overlap
+  - Query `japan` maps to Japan country filter and returns Japan stations
+  - Changing country to Spain clears the conflicting `japan` query and returns Spain stations
+  - Saved tab in-page `direct-player`: absent
+  - Saved tab in-page `station-detail`: absent
+- Bottom sheet QA at 390px: PASS
+  - Mini player opens the bottom sheet
+  - Close button is fully visible at 40px x 40px
+  - Sheet body is scrollable
+  - Dimmed backdrop tap closes the sheet
+  - Close button closes the sheet
+  - Horizontal overflow: none
+- YouTube alternate QA at 390px: PASS
+  - Before user YouTube action: iframe count 0
+  - After user action: exactly one visible YouTube iframe, 322px x 220px, in viewport
+  - Hidden YouTube iframe count: 0
+  - Closing the sheet unmounts the iframe
+  - Console warning/error: none
+  - Page errors: none
+
+### Evidence
+
+- `C:\Users\rooki\AppData\Local\Temp\global-radio-qa-continuation\home-360.png`
+- `C:\Users\rooki\AppData\Local\Temp\global-radio-qa-continuation\home-390.png`
+- `C:\Users\rooki\AppData\Local\Temp\global-radio-qa-continuation\bottom-sheet-open-390.png`
+- `C:\Users\rooki\AppData\Local\Temp\global-radio-qa-continuation\youtube-visible-390.png`
+
+### Not Checked
+
+- iOS Safari physical-device direct stream playback
+- Android/iOS native package smoke test after this web-layer patch
+- Long-running stream stability across multiple stations
