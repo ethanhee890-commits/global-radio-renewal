@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['android', 'ios', 'assets', 'dist', 'node_modules', 'output', '.tools', 'jeolyakradar-local-package'] },
+  { ignores: ['android', 'ios', 'assets', 'dist', 'node_modules', 'output', '.gradle-user-home', '.tools', 'jeolyakradar-local-package'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

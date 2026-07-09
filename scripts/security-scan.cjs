@@ -2,7 +2,19 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const ignoredDirectories = new Set(['.git', '.tools', '.playwright-cli', 'android', 'assets', 'dist', 'ios', 'node_modules', 'output', 'test-results']);
+const ignoredDirectories = new Set([
+  '.git',
+  '.gradle-user-home',
+  '.tools',
+  '.playwright-cli',
+  'android',
+  'assets',
+  'dist',
+  'ios',
+  'node_modules',
+  'output',
+  'test-results'
+]);
 const findings = [];
 const runtimeFilePattern = /\.(cjs|js|json|ts|tsx|html|css|webmanifest)$/;
 
@@ -85,6 +97,18 @@ function assertRuntimePolicy(_filePath, relativePath, text) {
   if (/"(?:src|start_url|scope)"\s*:\s*"\/(?:icons\/|manifest\.webmanifest)?/.test(text)) {
     findings.push(`${relativePath}: PWA manifest paths must be relative, not root-relative.`);
   }
+
+  if (relativePath.endsWith('.css') && text.includes('.youtube-frame')) {
+    if (/\.youtube-frame\s*\{[^}]*display\s*:\s*none/i.test(text)) {
+      findings.push(`${relativePath}: YouTube iframe must never be hidden with display:none.`);
+    }
+    if (/\.youtube-frame\s*\{[^}]*(?:visibility\s*:\s*hidden|opacity\s*:\s*0|width\s*:\s*1px|height\s*:\s*1px)/i.test(text)) {
+      findings.push(`${relativePath}: YouTube iframe must stay visibly sized and visible.`);
+    }
+    if (!/\.youtube-frame\s*\{[^}]*display\s*:\s*block/i.test(text) || !/\.youtube-frame\s*\{[^}]*width\s*:\s*100%/i.test(text)) {
+      findings.push(`${relativePath}: YouTube iframe must explicitly render as a visible full-width frame.`);
+    }
+  }
 }
 
 function assertRelativeManifest(manifestPath) {
@@ -114,7 +138,7 @@ function assertRelativeManifest(manifestPath) {
   }
 }
 
-for (const runtimeRoot of ['src', 'public', 'public-radio', 'scripts', 'dist']) {
+for (const runtimeRoot of ['src', 'public', 'public-radio', 'scripts', 'dist', 'android/app/src/main/assets/public']) {
   walkRuntimeFiles(path.join(root, runtimeRoot), assertRuntimePolicy);
 }
 assertRelativeManifest(path.join(root, 'public', 'manifest.webmanifest'));

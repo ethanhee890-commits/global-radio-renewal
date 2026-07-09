@@ -624,3 +624,22 @@ tags:
 - Real Android exact alarm behavior at wall-clock time
 - iOS native archive/signing and physical-device smoke test
 - Long-running stream stability across multiple stations
+
+## 2026-07-10 YouTube Fallback Source QA Follow-up
+
+### Finding
+
+- Public mobile QA에서 `Lofi Girl Radio Demo`의 공식 YouTube 대체 소스가 visible iframe으로 열리기는 했지만, 기존 영상 ID `jfKfPfyJRdk`가 YouTube iframe 안에서 `실시간 스트림 녹화를 볼 수 없습니다.` 상태를 표시했습니다.
+- 이 문제는 hidden player나 오디오 추출 문제가 아니라, 검증 seed가 현재 사용할 수 없는 오래된 라이브 영상 ID를 가리키고 있던 데이터 오류입니다.
+
+### Fixed
+
+- Lofi Girl 공식 대체 소스를 2026-07-10 기준 공식 채널 `@LofiGirl`의 현재 라이브 영상 ID `X4VbdwhkE10`으로 교체했습니다.
+- YouTube embed URL에 가능한 경우 현재 앱 origin을 포함하도록 보강했습니다. 이는 YouTube embed 정책에서 발생할 수 있는 출처 불일치 오류를 줄이기 위한 조치입니다.
+- `security:scan`이 빌드된 Android WebView asset 경로(`android/app/src/main/assets/public`)까지 확인하도록 확장했고, `.youtube-frame`이 숨겨지거나 1px 플레이어가 되는 회귀를 차단했습니다.
+- 회귀 테스트가 Lofi Girl 공식 영상 ID `X4VbdwhkE10`과 visible iframe/origin 조건을 확인하도록 갱신되었습니다.
+
+### Not Checked Yet
+
+- GitHub Pages 재배포 후 실제 공개 URL에서 `Lofi Girl` 검색 -> YouTube 대체 소스 선택 -> iframe 안의 YouTube 오류 문구 부재 확인
+- Android/iOS 실기기에서 YouTube iframe 재생 버튼 탭 후의 실제 재생 성공 여부

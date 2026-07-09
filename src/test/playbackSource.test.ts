@@ -22,7 +22,7 @@ describe('getPreferredSource', () => {
 
     expect(recommendation.preferred).toBe('youtube_alternate');
     expect(recommendation.direct?.type).toBe('radio_stream');
-    expect(recommendation.youtubeAlternate?.youtubeVideoId).toBe('jfKfPfyJRdk');
+    expect(recommendation.youtubeAlternate?.youtubeVideoId).toBe('X4VbdwhkE10');
   });
 
   it('prefers direct playback for good stations without alternates', () => {

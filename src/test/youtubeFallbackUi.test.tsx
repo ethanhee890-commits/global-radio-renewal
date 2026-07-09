@@ -31,6 +31,17 @@ const alternate: YouTubeAlternateSource = {
   sourceUrl: 'https://www.youtube.com/@radiombc'
 };
 
+const videoAlternate: YouTubeAlternateSource = {
+  id: 'yt-lofi-girl-live',
+  stationuuid: 'seed-lofi-girl-low',
+  type: 'youtube_video',
+  youtubeVideoId: 'X4VbdwhkE10',
+  label: 'Lofi Girl official YouTube live',
+  verificationStatus: 'verified',
+  verificationMethod: 'manual_seed',
+  sourceUrl: 'https://www.youtube.com/watch?v=X4VbdwhkE10'
+};
+
 describe('YouTube fallback UI boundaries', () => {
   it('shows the verified YouTube handoff only after direct radio playback fails', () => {
     const markup = renderToStaticMarkup(
@@ -89,6 +100,22 @@ describe('YouTube fallback UI boundaries', () => {
     expect(markup).toContain('referrerPolicy="strict-origin-when-cross-origin"');
     expect(markup).not.toContain('display:none');
     expect(markup).not.toContain('visibility:hidden');
+  });
+
+  it('renders the current verified official video with an embed origin when available', () => {
+    vi.stubGlobal('location', { origin: 'https://example.test' });
+
+    const markup = renderToStaticMarkup(
+      <YouTubeAlternatePlayer station={station} source={videoAlternate} mounted onMount={vi.fn()} />
+    );
+
+    expect(markup).toContain('class="youtube-frame"');
+    expect(markup).toContain('https://www.youtube.com/embed/X4VbdwhkE10?rel=0');
+    expect(markup).toContain('origin=https%3A%2F%2Fexample.test');
+    expect(markup).not.toContain('display:none');
+    expect(markup).not.toContain('visibility:hidden');
+
+    vi.unstubAllGlobals();
   });
 
   it('keeps the visible YouTube iframe reachable after the user chooses fallback for a good-quality station', () => {

@@ -5,12 +5,12 @@ export const YOUTUBE_ALTERNATES_SEED: YouTubeAlternateSource[] = [
     id: 'yt-lofi-girl-live',
     stationuuid: 'seed-lofi-girl-low',
     type: 'youtube_video',
-    youtubeVideoId: 'jfKfPfyJRdk',
+    youtubeVideoId: 'X4VbdwhkE10',
     label: 'Lofi Girl 공식 YouTube 라이브',
     verificationStatus: 'verified',
     verificationMethod: 'manual_seed',
-    sourceUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    note: 'P0 seed mapping입니다. YouTube 플레이어를 보이는 상태로만 제공합니다.'
+    sourceUrl: 'https://www.youtube.com/watch?v=X4VbdwhkE10',
+    note: '2026-07-10 기준 Lofi Girl 공식 채널(@LofiGirl)의 현재 라이브 스트림으로 확인했습니다. YouTube는 visible iframe으로만 제공합니다.'
   },
   {
     id: 'yt-shonan-beach-fm-live',

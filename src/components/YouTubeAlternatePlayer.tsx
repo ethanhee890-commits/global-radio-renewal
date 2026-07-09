@@ -1,13 +1,29 @@
 import { Youtube } from 'lucide-react';
 import type { RadioStation, YouTubeAlternateSource } from '../types/station';
 
+function getEmbedOrigin(): string {
+  const origin = globalThis.location?.origin;
+  return origin?.startsWith('http') ? origin : '';
+}
+
+function buildEmbedUrl(path: string, params: Record<string, string>): string {
+  const query = new URLSearchParams(params);
+  const origin = getEmbedOrigin();
+
+  if (origin) {
+    query.set('origin', origin);
+  }
+
+  return `https://www.youtube.com/embed/${path}?${query.toString()}`;
+}
+
 function getEmbedUrl(source: YouTubeAlternateSource): string {
   if (source.youtubeVideoId) {
-    return `https://www.youtube.com/embed/${encodeURIComponent(source.youtubeVideoId)}?rel=0`;
+    return buildEmbedUrl(encodeURIComponent(source.youtubeVideoId), { rel: '0' });
   }
 
   if (source.youtubeChannelId) {
-    return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(source.youtubeChannelId)}`;
+    return buildEmbedUrl('live_stream', { channel: source.youtubeChannelId });
   }
 
   return '';
