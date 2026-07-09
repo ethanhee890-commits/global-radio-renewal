@@ -1,6 +1,6 @@
 import { Heart, Pause, Play, Radio, Youtube } from 'lucide-react';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { NowPlayingInfo, PlaybackStatus, RadioStation, StationQualityOptions } from '../types/station';
+import type { PlaybackStatus, RadioStation } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 
 export function MiniPlayer({
@@ -8,43 +8,36 @@ export function MiniPlayer({
   sourceType,
   status,
   isFavorite,
-  nowPlaying,
   onPlay,
   onPause,
   onToggleFavorite,
-  qualityOptions
+  onOpenDetails
 }: {
   station: RadioStation | null;
   sourceType: 'radio' | 'youtube';
   status: PlaybackStatus;
   isFavorite: boolean;
-  nowPlaying?: NowPlayingInfo;
   onPlay: () => void;
   onPause: () => void;
   onToggleFavorite: () => void;
-  qualityOptions?: StationQualityOptions;
+  onOpenDetails?: () => void;
 }) {
   if (!station) {
     return null;
   }
 
-  const quality = scoreStationQuality(station, qualityOptions);
+  const quality = scoreStationQuality(station);
   const SourceIcon = sourceType === 'youtube' ? Youtube : Radio;
-  const trackTitle = nowPlaying?.trackTitle;
-  const artist = nowPlaying?.artist;
-  const primaryTitle = trackTitle ? `${artist ? `${artist} - ` : ''}${trackTitle}` : station.name;
-  const secondaryTitle = trackTitle ? station.name : [station.country, station.language].filter(Boolean).join(' / ');
 
   return (
     <aside className="mini-player" aria-label="현재 재생">
-      <div>
+      <button className="mini-player-info" type="button" onClick={onOpenDetails} disabled={!onOpenDetails} aria-label={`${station.name} 현재 방송 패널 열기`}>
         <SourceIcon aria-hidden="true" size={18} />
-        <span>{sourceType === 'youtube' ? 'YouTube' : '라디오 스트림'}</span>
-      </div>
-      <div className="mini-player-track">
-        <strong>{primaryTitle}</strong>
-        {secondaryTitle ? <small>{secondaryTitle}</small> : null}
-      </div>
+        <span>
+          <small>{sourceType === 'youtube' ? 'YouTube' : 'Radio Stream'}</small>
+          <strong>{station.name}</strong>
+        </span>
+      </button>
       <QualityBadge quality={quality} />
       <div className="mini-player-actions">
         {status === 'playing' ? (
@@ -56,7 +49,7 @@ export function MiniPlayer({
             <Play aria-hidden="true" size={17} />
           </button>
         )}
-        <button type="button" onClick={onToggleFavorite} aria-pressed={isFavorite} aria-label="저장 전환">
+        <button type="button" onClick={onToggleFavorite} aria-pressed={isFavorite} aria-label="즐겨찾기 전환">
           <Heart aria-hidden="true" size={17} fill={isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>

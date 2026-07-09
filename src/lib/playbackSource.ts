@@ -1,10 +1,10 @@
-import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
+import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
 import type { PlaybackSourceRecommendation, RadioStation, YouTubeAlternateSource } from '../types/station';
 import { scoreStationQuality } from './qualityScore';
 
 export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlternateSource | null): PlaybackSourceRecommendation {
   const quality = scoreStationQuality(station);
-  const youtubeAlternate = alternate ?? getYouTubeAlternate(station.stationuuid);
+  const youtubeAlternate = alternate ?? getYouTubeAlternateForStation(station);
   const directUrl = station.url_resolved || station.url;
   const direct = directUrl
     ? {
@@ -21,7 +21,7 @@ export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlt
       preferred: 'youtube_alternate',
       direct,
       youtubeAlternate,
-      reason: '직접 스트림 URL이 없어 검증된 YouTube 대체 소스를 먼저 제안합니다.'
+      reason: '라디오 주소가 없어 공식 YouTube 방송을 먼저 보여드립니다.'
     };
   }
 
@@ -30,7 +30,7 @@ export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlt
       preferred: 'youtube_alternate',
       direct,
       youtubeAlternate,
-      reason: '직접 스트림 품질이 낮거나 실패 신호가 있어 YouTube 대체 소스를 함께 제안합니다.'
+      reason: '라디오 재생이 불안정할 수 있어 공식 YouTube 방송도 함께 보여드립니다.'
     };
   }
 
@@ -39,7 +39,7 @@ export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlt
       preferred: 'direct',
       direct,
       youtubeAlternate,
-      reason: '직접 라디오 스트림을 우선 재생합니다.'
+      reason: '라디오 방송을 바로 재생합니다.'
     };
   }
 
@@ -47,6 +47,6 @@ export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlt
     preferred: 'none',
     direct,
     youtubeAlternate,
-    reason: '사용 가능한 재생 소스가 없습니다.'
+    reason: '지금 재생할 수 있는 방송 정보가 없습니다.'
   };
 }

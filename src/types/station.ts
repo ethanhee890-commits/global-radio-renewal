@@ -12,11 +12,6 @@ export type StationQualityInput = {
   url_resolved?: string;
 };
 
-export type StationQualityOptions = {
-  nativeHlsSupported?: boolean;
-  hasRecentPlaybackFailure?: boolean;
-};
-
 export type StationQuality = {
   score: number;
   grade: QualityGrade;
@@ -58,6 +53,7 @@ export type SearchStationsParams = {
 export type YouTubeAlternateSource = {
   id: string;
   stationuuid: string;
+  stationNameAliases?: string[];
   type: 'youtube_live' | 'youtube_video' | 'youtube_channel';
   youtubeVideoId?: string;
   youtubeChannelId?: string;
@@ -108,27 +104,8 @@ export type GlobalRadioSettings = {
   preferHttps: boolean;
   hideLowQuality: boolean;
   showYouTubeAlternates: boolean;
-};
-
-export type RadioAlarmSettings = {
-  enabled: boolean;
-  time: string;
-  station: StoredStation | null;
-  lastTriggeredDate?: string;
-};
-
-export type NowPlayingStatus = 'idle' | 'checking' | 'available' | 'unavailable' | 'error';
-
-export type NowPlayingInfo = {
-  status: NowPlayingStatus;
-  stationName?: string;
-  provider?: string;
-  programTitle?: string;
-  trackTitle?: string;
-  artist?: string;
-  album?: string;
-  artworkUrl?: string;
-  sourceUrl?: string;
-  checkedAt?: string;
-  message: string;
+  alarmEnabled: boolean;
+  alarmHour: number;
+  alarmMinute: number;
+  alarmStation?: StoredStation;
 };

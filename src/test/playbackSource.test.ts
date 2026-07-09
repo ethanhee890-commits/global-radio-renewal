@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
+import { getYouTubeAlternate, getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
 import { getPreferredSource } from '../lib/playbackSource';
 import type { RadioStation } from '../types/station';
 
@@ -40,5 +40,25 @@ describe('getPreferredSource', () => {
 
     expect(recommendation.preferred).toBe('direct');
     expect(recommendation.youtubeAlternate).toBeNull();
+  });
+
+  it('matches verified YouTube alternates by station name when Radio Browser uuid changes', () => {
+    const alternate = getYouTubeAlternateForStation({
+      stationuuid: 'radio-browser-dynamic-mbc-id',
+      name: 'MBC FM4U',
+      url: 'https://minimw.imbc.com/dmfm/_definst_/mfm.stream/playlist.m3u8',
+      url_resolved: 'https://minimw.imbc.com/dmfm/_definst_/mfm.stream/playlist.m3u8',
+      country: 'The Republic Of Korea',
+      countrycode: 'KR',
+      language: 'korean',
+      codec: 'AAC+',
+      bitrate: 107,
+      hls: 1,
+      lastcheckok: 1,
+      ssl_error: 0
+    });
+
+    expect(alternate?.id).toBe('yt-mbc-radio-official');
+    expect(alternate?.youtubeChannelId).toBe('UCKNZsAeQXpvI-Mpoc0ZKhsA');
   });
 });

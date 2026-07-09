@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-07-09T10:12:18.758Z",
+  "sourcePolicy": "Jenny source images only; no vector redraw or AI regeneration",
+  "appIconSource": "assets/jiguradio-final-assets/source/jenny-app-icon.png",
+  "transparentAppIconSource": "assets/jiguradio-final-assets/source/jenny-app-icon-clean-transparent.png",
+  "splashSource": "assets/jiguradio-final-assets/source/jenny-splash.png",
+  "androidSplashSource": "assets/jiguradio-final-assets/source/jenny-splash-aos.png",
+  "iosSplashSource": "assets/jiguradio-final-assets/source/jenny-splash-ios.png"
+}

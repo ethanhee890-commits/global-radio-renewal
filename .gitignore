@@ -1,9 +1,22 @@
 node_modules/
 dist/
+.agents/
+.codex/
+.codex-remote-attachments/
+.tools/
+.playwright-cli/
+artifacts/
+output/
+test-results/
+release/
+branding-package/
+android/app/build/
+android/.gradle/
+ios/App/Pods/
+ios/App/build/
+jeolyakradar-local-package/
+\[브랜딩\] 우동 딜/
+*.log
 .env
 .env.local
 .env.*.local
-*.log
-.DS_Store
-.vite/
-coverage/

@@ -7,93 +7,60 @@ tags:
   - qa
   - global-radio
   - japan-radio
-  - alarm
-  - now-playing
 ---
 
-# QA Report - 지구라디오 알람, 현재곡 및 UI/UX 업데이트
+# QA Report — 지구라디오 일본 방송 보강
 
 ## Scope
 
-- 현재 재생 중인 방송의 프로그램명/곡명 패널 추가
-- KEXP 공식 now-playing API 연동 및 Media Session metadata 반영
-- 지원 API가 없는 방송은 추정값을 만들지 않고 미지원 상태로 표시
-- 앱이 열린 상태에서 지정 시각에 선택 채널 재생을 시도하는 라디오 알람 MVP 추가
-- 설정 화면에 알람 패널 추가
-- 깨진 한글 UI 문구 정리
-- 새 패널을 포함한 데스크톱 및 360px 모바일 레이아웃 정리
-- CSP에 `https://api.kexp.org`를 허용해 공식 now-playing API 호출 가능하게 수정
-- 앱 타이틀을 `지구라디오 - 지금 들을 방송을 고르세요`로 변경
-- 히어로 카피, CTA, 상태 스트립, 내비게이션 라벨을 청취 행동 중심으로 재정리
-- `Preferences`, `Morning Radio`, `Now Playing` 등 보이는 영어 보조 라벨을 한국어 톤으로 정리
-- 모바일/태블릿에서 방송 선택 후 재생 정보 영역이 목록 아래에 묻히지 않도록 상단으로 이동
-- 모바일 상단 탭의 active pill 높이와 폭을 고정해 선택 상태가 과하게 커 보이지 않도록 정리
-- 루트에 영구 `<audio>` 엔진을 배치해 설정/저장/최근 탭 이동 중에도 direct stream 재생 상태가 유지되도록 수정
-- DirectAudioPlayer의 0:00 / 0:00 네이티브 컨트롤을 제거하고 앱 스타일의 재생 상태 패널로 대체
-- Chrome 등 HLS 직접 재생이 불안정한 브라우저에서는 HLS/m3u8 점수를 낮추고, 실제 재생 실패한 스트림은 로컬에서 실패 등급으로 재계산
+- 일본 우선 seed: NHK WORLD-JAPAN Radio, Shonan Beach FM 78.9, FM Kahoku 78.7
+- 일본 빠른 진입 CTA, 일본 검증 안내, NHK/공개 FM quick filter
+- Shonan Beach FM 공식 YouTube Live Cam visible iframe 대체 소스
+- radiko 우회/비공식 NHK 미러 제외
 
 ## Automated Checks
 
 - `npm.cmd run verify`: PASS
   - lint: PASS
   - typecheck: PASS
-  - vitest: 7 files / 23 tests PASS
+  - vitest: 10 files / 38 tests PASS
   - build: PASS
   - security scan: PASS
-- `npm.cmd audit --audit-level=moderate`: PASS, vulnerabilities 0
+- `npm.cmd audit --omit=dev`: PASS, production vulnerabilities 0
 
 ## Browser Checks
 
-- Current dev URL: `http://127.0.0.1:5179/`
-- Production preview URL: `http://127.0.0.1:5184/`
-- Desktop preview 1366px: PASS
-  - hero title visible
-  - now-playing panel visible
-  - direct player / now-playing / station detail panels visible
-  - settings alarm panel visible
-  - horizontal overflow: none
-  - console error: none
-- Mobile 360px dev URL: PASS
-  - document width: 360
-  - horizontal overflow: none
-  - now-playing panel visible
-  - settings alarm panel visible
-  - app console errors: none
-- UI/UX regression check with installed Chrome: PASS
-  - 676px viewport: title updated, hero height 278.8px, H1 34px / 40.12px line-height, hero CTA buttons 42px high, status text not clipped
-  - 360px viewport: title updated, hero height 248.97px, CTA buttons 306px x 42px, hero status strip hidden, horizontal overflow none
-  - 360px settings view: `설정` tab active, alarm panel width 336px, horizontal overflow none
-  - visible legacy English labels (`Preferences`, `Morning Radio`, `Now Playing`, `Listen smarter`): none
-  - console errors/warnings during UI check: none
-- Player placement UX check with clean storage: PASS
-  - initial 360px viewport: no auto-selected station, search/list panel appears before player panel
-  - after selecting first station at 360px: player panel ordered above list, scrolled to top of player panel, selected station shown in direct player
-  - after selecting first station at 676px: player panel ordered above list, scrolled to top of player panel
-  - desktop 1200px: existing two-column layout preserved
-  - horizontal overflow: none
-- Playback persistence and score correction check: PASS
-  - 360px nav buttons: equal width, 34px height, active tab no overlap
-  - DirectAudioPlayer no longer owns/remounts the `<audio>` element
-  - root `.audio-engine` remains mounted after switching to settings tab
-  - HLS station forced playback on Chrome: blocked before native audio attempt, player shows explicit HLS direct-playback error
-  - failed HLS station recalculates to `재생 실패 0`
-  - 676px viewport: audio engine mounted, direct player has no nested audio, horizontal overflow none
-- KEXP now-playing browser check: PASS
-  - provider: `KEXP 공개 API`
-  - sample track loaded during QA: `Won't Wait`
-  - sample artist loaded during QA: `Makthaverskan`
-  - console errors after CSP fix: none
+- URL: `http://127.0.0.1:5179/`
+- Desktop Browser check: PASS
+  - Japan CTA visible and clickable
+  - Result order: NHK WORLD-JAPAN Radio, Shonan Beach FM 78.9, FM Kahoku 78.7
+  - Detail panel selects NHK WORLD-JAPAN Radio after Japan CTA
+  - radiko limitation notice visible
+  - Console warn/error: none
+  - Horizontal overflow: none
+- Mobile 360px Browser check: PASS
+  - Japan panel and NHK result visible
+  - Horizontal overflow: none
+  - Out-of-viewport control rects: none
+- Shonan YouTube alternate: PASS
+  - Detail panel shows verified YouTube alternate source
+  - Button mounts visible iframe
+  - iframe src: `https://www.youtube.com/embed/qGCPvnk8Unc?rel=0`
+  - MiniPlayer hidden while YouTube source is active
 
-## Current Catalog Evidence
+## Stream Checks
 
-- fallback station count: 51
-- Japan fallback stations: 12
-- non-Japan fallback stations: 39
-- covered country codes: JP, KR, US, GB, DE, FR, CA, AU, NL, BR, ES, IT, TW, SG
+- NHK WORLD-JAPAN HLS playlist: HTTP 200, `application/vnd.apple.mpegurl`, 244 bytes
+- Shonan Beach FM HTTPS MP3 stream: HTTP 200, `audio/mpeg`, data received for 8 seconds
+- FM Kahoku HTTP MP3 stream: HTTP 200, `audio/mpeg`, data received for 8 seconds
+
+## Playback Automation Note
+
+- Browser automation click reached the app autoplay-blocked state for Shonan direct audio and showed the expected "tap again" warning.
+- Because automated browser clicks may not grant the same audible media permission as a real user tap, direct audio canplay was verified by stream data receipt, not by audible playback in the automation session.
 
 ## Not Checked
 
-- iOS Safari real-device direct audio playback
-- closed/background browser alarm reliability
-- radiko-only Japan domestic station playback
-- long-running live-stream stability
+- iOS Safari 실기기 direct audio playback
+- 일본 내 radiko 앱/웹 권역 재생
+- 장시간 스트림 안정성

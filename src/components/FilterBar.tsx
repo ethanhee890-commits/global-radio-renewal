@@ -1,4 +1,6 @@
-import { Globe2, Languages, SlidersHorizontal, Tag } from 'lucide-react';
+import { Check, ChevronDown, Globe2, Languages, SlidersHorizontal, Tag } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import type { RadioBrowserFilterOption, RadioBrowserFilterOptions } from '../lib/radioBrowser';
 
 export type RadioFilters = {
   country: string;
@@ -7,108 +9,231 @@ export type RadioFilters = {
   sort: 'quality' | 'popular' | 'name';
 };
 
-const COUNTRY_OPTIONS = [
-  { label: '전체', value: '' },
-  { label: '일본', value: 'JP' },
-  { label: '한국', value: 'KR' },
-  { label: '미국', value: 'US' },
-  { label: '영국', value: 'GB' },
-  { label: '독일', value: 'DE' },
-  { label: '프랑스', value: 'FR' },
-  { label: '캐나다', value: 'CA' },
-  { label: '호주', value: 'AU' },
-  { label: '네덜란드', value: 'NL' },
-  { label: '브라질', value: 'BR' },
-  { label: '스페인', value: 'ES' },
-  { label: '이탈리아', value: 'IT' },
-  { label: '대만', value: 'TW' },
-  { label: '싱가포르', value: 'SG' }
-];
+type FilterOption = RadioBrowserFilterOption;
 
-const LANGUAGE_OPTIONS = [
+const GENERAL_GENRE_OPTIONS: RadioBrowserFilterOption[] = [
   { label: '전체', value: '' },
-  { label: '한국어', value: 'korean' },
-  { label: '영어', value: 'english' },
-  { label: '일본어', value: 'japanese' },
-  { label: '독일어', value: 'german' },
-  { label: '프랑스어', value: 'french' },
-  { label: '스페인어', value: 'spanish' },
-  { label: '중국어', value: 'chinese' },
-  { label: '연주 음악', value: 'instrumental' }
-];
-
-const GENRE_OPTIONS = [
-  { label: '전체', value: '' },
-  { label: '일본 추천', value: 'japan-priority' },
-  { label: '공개 FM', value: 'terrestrial-fm' },
-  { label: 'NHK/뉴스', value: 'nhk' },
+  { label: '페스티벌/라이브', value: 'festival' },
   { label: 'Jazz', value: 'jazz' },
   { label: 'News', value: 'news' },
-  { label: 'K-pop/J-pop', value: 'pop' },
-  { label: 'Classical', value: 'classical' },
-  { label: 'Rock', value: 'rock' },
+  { label: 'Lofi', value: 'lofi' },
   { label: 'Talk', value: 'talk' }
 ];
 
+const JAPAN_GENRE_OPTIONS: RadioBrowserFilterOption[] = [
+  { label: '일본 추천', value: 'japan-priority' },
+  { label: '공개 FM', value: 'terrestrial-fm' },
+  { label: 'NHK/뉴스', value: 'nhk' }
+];
+
+const SORT_OPTIONS: Array<FilterOption & { value: RadioFilters['sort'] }> = [
+  { label: '품질순', value: 'quality' },
+  { label: '인기순', value: 'popular' },
+  { label: '이름순', value: 'name' }
+];
+
+function uniqueOptions(options: RadioBrowserFilterOption[]): RadioBrowserFilterOption[] {
+  const seen = new Set<string>();
+  return options.filter((option) => {
+    const key = option.value.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function isJapanCountry(country: string): boolean {
+  return country === 'Japan' || country.toUpperCase() === 'JP';
+}
+
+function getGenreOptions(country: string, globalTags: RadioBrowserFilterOption[]): FilterOption[] {
+  const baseOptions = globalTags.length > 0 ? uniqueOptions([globalTags[0] ?? GENERAL_GENRE_OPTIONS[0], GENERAL_GENRE_OPTIONS[1], ...globalTags.slice(1)]) : GENERAL_GENRE_OPTIONS;
+
+  if (!isJapanCountry(country)) {
+    return baseOptions;
+  }
+
+  return uniqueOptions([baseOptions[0] ?? GENERAL_GENRE_OPTIONS[0], ...JAPAN_GENRE_OPTIONS, ...baseOptions.slice(1)]);
+}
+
+function hasOptionValue(options: FilterOption[], value: string): boolean {
+  return options.some((option) => option.value === value);
+}
+
+function FilterSelect({
+  label,
+  icon,
+  value,
+  options,
+  onChange
+}: {
+  label: string;
+  icon: ReactNode;
+  value: string;
+  options: FilterOption[];
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const selected = selectedIndex >= 0 ? options[selectedIndex] : value ? { label: value, value } : options[0];
+  const labelId = `${id}-label`;
+  const triggerId = `${id}-trigger`;
+  const listboxId = `${id}-listbox`;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function closeOnOutsidePointer(event: PointerEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  function focusOption(index: number) {
+    window.requestAnimationFrame(() => {
+      rootRef.current?.querySelectorAll<HTMLButtonElement>('.filter-select-option')[index]?.focus();
+    });
+  }
+
+  function openAndFocus(index = selectedIndex >= 0 ? selectedIndex : 0) {
+    setOpen(true);
+    focusOption(index);
+  }
+
+  function choose(option: FilterOption) {
+    onChange(option.value);
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
+
+  return (
+    <div className="filter-select" ref={rootRef}>
+      <span className="filter-select-label" id={labelId}>
+        {icon}
+        {label}
+      </span>
+      <button
+        ref={triggerRef}
+        id={triggerId}
+        className="filter-select-trigger"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-labelledby={`${labelId} ${triggerId}`}
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            openAndFocus(event.key === 'ArrowDown' ? 0 : options.length - 1);
+          }
+        }}
+      >
+        <span>{selected.label}</span>
+        <ChevronDown aria-hidden="true" size={16} />
+      </button>
+      {open ? (
+        <div className="filter-select-menu" id={listboxId} role="listbox" aria-labelledby={labelId}>
+          {options.map((option, index) => {
+            const isSelected = option.value === value;
+            return (
+              <button
+                className={`filter-select-option ${isSelected ? 'is-selected' : ''}`}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                key={`${option.value}-${option.label}`}
+                onClick={() => choose(option)}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    const direction = event.key === 'ArrowDown' ? 1 : -1;
+                    focusOption((index + direction + options.length) % options.length);
+                  }
+                }}
+              >
+                <span>{option.label}</span>
+                {isSelected ? <Check aria-hidden="true" size={15} /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function FilterBar({
   filters,
-  onChange
+  onChange,
+  options
 }: {
   filters: RadioFilters;
   onChange: (filters: RadioFilters) => void;
+  options: RadioBrowserFilterOptions;
 }) {
+  const genreOptions = getGenreOptions(filters.country, options.tags);
+  const selectedGenreValue = hasOptionValue(genreOptions, filters.tag) ? filters.tag : '';
+
+  function changeCountry(country: string) {
+    const nextGenreOptions = getGenreOptions(country, options.tags);
+    const nextTag = hasOptionValue(nextGenreOptions, filters.tag) ? filters.tag : '';
+    onChange({ ...filters, country, tag: nextTag });
+  }
+
   return (
     <section className="filter-bar" aria-label="방송국 필터">
-      <label>
-        <span>
-          <Globe2 aria-hidden="true" size={15} />
-          국가
-        </span>
-        <select value={filters.country} onChange={(event) => onChange({ ...filters, country: event.target.value })}>
-          {COUNTRY_OPTIONS.map((option) => (
-            <option key={option.label} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span>
-          <Languages aria-hidden="true" size={15} />
-          언어
-        </span>
-        <select value={filters.language} onChange={(event) => onChange({ ...filters, language: event.target.value })}>
-          {LANGUAGE_OPTIONS.map((option) => (
-            <option key={option.label} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span>
-          <Tag aria-hidden="true" size={15} />
-          장르
-        </span>
-        <select value={filters.tag} onChange={(event) => onChange({ ...filters, tag: event.target.value })}>
-          {GENRE_OPTIONS.map((option) => (
-            <option key={option.label} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span>
-          <SlidersHorizontal aria-hidden="true" size={15} />
-          정렬
-        </span>
-        <select value={filters.sort} onChange={(event) => onChange({ ...filters, sort: event.target.value as RadioFilters['sort'] })}>
-          <option value="quality">품질순</option>
-          <option value="popular">인기순</option>
-          <option value="name">이름순</option>
-        </select>
-      </label>
+      <FilterSelect
+        label="국가"
+        icon={<Globe2 aria-hidden="true" size={15} />}
+        value={filters.country}
+        options={options.countries}
+        onChange={changeCountry}
+      />
+      <FilterSelect
+        label="언어"
+        icon={<Languages aria-hidden="true" size={15} />}
+        value={filters.language}
+        options={options.languages}
+        onChange={(language) => onChange({ ...filters, language })}
+      />
+      <FilterSelect
+        label="장르"
+        icon={<Tag aria-hidden="true" size={15} />}
+        value={selectedGenreValue}
+        options={genreOptions}
+        onChange={(tag) => onChange({ ...filters, tag })}
+      />
+      <FilterSelect
+        label="정렬"
+        icon={<SlidersHorizontal aria-hidden="true" size={15} />}
+        value={filters.sort}
+        options={SORT_OPTIONS}
+        onChange={(sort) => onChange({ ...filters, sort: sort as RadioFilters['sort'] })}
+      />
     </section>
   );
 }

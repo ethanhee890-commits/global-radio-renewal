@@ -19,7 +19,7 @@ export function SearchBar({
 
   return (
     <form className="radio-search" onSubmit={handleSubmit}>
-      <label htmlFor="station-search">찾고 싶은 방송</label>
+      <label htmlFor="station-search">방송국 검색</label>
       <div className="radio-search-control">
         <Search aria-hidden="true" size={19} />
         <input
@@ -27,7 +27,8 @@ export function SearchBar({
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="예: NHK, KEXP, Tokyo, jazz"
+          placeholder="방송국, 국가, 장르 검색"
+          aria-label="방송국, 국가, 장르 검색"
           autoComplete="off"
         />
         <button className="radio-button primary" type="submit" disabled={loading}>

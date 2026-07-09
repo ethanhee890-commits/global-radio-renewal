@@ -7,3 +7,5 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <GlobalRadioApp />
   </React.StrictMode>
 );
+
+document.getElementById('boot-splash')?.remove();

@@ -1,8 +1,9 @@
 import { ExternalLink, RadioTower, ShieldCheck } from 'lucide-react';
-import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
+import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
 import { getPreferredSource } from '../lib/playbackSource';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { RadioStation, StationQualityOptions } from '../types/station';
+import { getSafeNetworkUrl } from '../lib/urlSafety';
+import type { RadioStation } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 import { YouTubeAlternatePlayer } from './YouTubeAlternatePlayer';
 
@@ -10,28 +11,27 @@ export function StationDetail({
   station,
   showYouTubeAlternate,
   youtubeMounted,
-  onMountYouTube,
-  qualityOptions
+  onMountYouTube
 }: {
   station: RadioStation | null;
   showYouTubeAlternate: boolean;
   youtubeMounted: boolean;
   onMountYouTube: () => void;
-  qualityOptions?: StationQualityOptions;
 }) {
   if (!station) {
     return (
       <aside className="station-detail empty-detail">
         <RadioTower aria-hidden="true" size={24} />
         <strong>방송국을 선택해 주세요.</strong>
-        <p>품질 점수, 재생 경로, 대체 소스 정보를 여기에서 확인할 수 있습니다.</p>
+        <p>재생 상태와 방송 정보를 여기에서 확인할 수 있어요.</p>
       </aside>
     );
   }
 
-  const quality = scoreStationQuality(station, qualityOptions);
-  const alternate = getYouTubeAlternate(station.stationuuid);
+  const quality = scoreStationQuality(station);
+  const alternate = getYouTubeAlternateForStation(station);
   const recommendation = getPreferredSource(station, alternate);
+  const homepageUrl = getSafeNetworkUrl(station.homepage);
 
   return (
     <aside className="station-detail">
@@ -39,7 +39,7 @@ export function StationDetail({
         <div>
           <span>선택한 방송국</span>
           <h2>{station.name}</h2>
-          <p>{[station.country, station.language].filter(Boolean).join(' / ') || '지역 정보 확인 필요'}</p>
+          <p>{[station.country, station.language].filter(Boolean).join(' · ') || '지역 정보 확인 필요'}</p>
         </div>
         <QualityBadge quality={quality} />
       </div>
@@ -57,11 +57,11 @@ export function StationDetail({
       </section>
 
       <section className="source-summary">
-        <h3>재생 경로</h3>
+        <h3>재생 정보</h3>
         <p>{recommendation.reason}</p>
         <dl>
           <div>
-            <dt>Direct stream</dt>
+            <dt>라디오 방송 주소</dt>
             <dd>{station.url_resolved || station.url}</dd>
           </div>
           <div>
@@ -69,14 +69,14 @@ export function StationDetail({
             <dd>{quality.isHttps ? '예' : '아니요'}</dd>
           </div>
           <div>
-            <dt>검증된 YouTube 대체 소스</dt>
+            <dt>공식 YouTube 방송</dt>
             <dd>{alternate ? alternate.label : '없음'}</dd>
           </div>
         </dl>
       </section>
 
-      {station.homepage ? (
-        <a className="source-link" href={station.homepage} target="_blank" rel="noreferrer">
+      {homepageUrl ? (
+        <a className="source-link" href={homepageUrl} target="_blank" rel="noreferrer">
           방송국 홈페이지 열기
           <ExternalLink aria-hidden="true" size={14} />
         </a>

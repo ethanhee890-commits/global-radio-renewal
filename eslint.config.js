@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage'] },
+  { ignores: ['android', 'ios', 'assets', 'dist', 'node_modules', 'output', '.tools', 'jeolyakradar-local-package'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -27,11 +27,15 @@ export default tseslint.config(
     }
   },
   {
-    files: ['scripts/**/*.cjs'],
+    files: ['server/**/*.cjs', 'scripts/**/*.cjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
-      globals: globals.node
+      globals: {
+        ...globals.node,
+        fetch: 'readonly',
+        URL: 'readonly'
+      }
     },
     rules: {
       '@typescript-eslint/no-require-imports': 'off'

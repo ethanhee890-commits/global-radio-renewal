@@ -5,20 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.api.radio-browser.info https://all.api.radio-browser.info https://api.kexp.org; media-src 'self' https: http: blob:; frame-src https://www.youtube.com https://www.youtube-nocookie.com;"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.api.radio-browser.info https://all.api.radio-browser.info; media-src 'self' https: http: blob:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; manifest-src 'self'; worker-src 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <meta name="theme-color" content="#0b0f0e" />
+    <meta name="theme-color" content="#0D0F14" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="지구라디오" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="description" content="전세계 공개 인터넷 라디오를 품질 좋은 소스부터 검색하고 재생하는 모바일 PWA" />
-    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%icons/app-icon.svg" />
-    <link rel="apple-touch-icon" href="%BASE_URL%icons/maskable-icon.svg" />
-    <title>지구라디오 - 지금 들을 방송을 고르세요</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/app-icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="description" content="전세계 공개 인터넷 라디오를 좋은 음질의 채널부터 검색하고 재생하는 모바일 라디오 앱" />
+    <title>지구라디오</title>
+    <style>
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 50% 42%, rgba(229, 57, 53, 0.18), transparent 34%),
+          #0d0f14;
+        color: #fef7f2;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+      }
+
+      #boot-splash > div {
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+        transform: translateY(-5vh);
+      }
+
+      #boot-splash img {
+        width: min(28vw, 150px);
+        height: min(28vw, 150px);
+        border-radius: 32px;
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.36);
+      }
+
+      #boot-splash strong {
+        font-size: 25px;
+        line-height: 1.22;
+        letter-spacing: 0;
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-splash" aria-label="지구라디오 실행 중">
+      <div>
+        <img src="/icons/app-icon.png" alt="" />
+        <strong>지구라디오</strong>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

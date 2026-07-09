@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432" role="img" aria-label="지구라디오 Android foreground">
+  <defs>
+    <linearGradient id="radioBody" x1="68" y1="143" x2="363" y2="333" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFDF8"/>
+      <stop offset="0.56" stop-color="#FEF7F2"/>
+      <stop offset="1" stop-color="#F1E7DC"/>
+    </linearGradient>
+    <linearGradient id="redGradient" x1="235" y1="181" x2="347" y2="301" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF4A43"/>
+      <stop offset="0.64" stop-color="#E53935"/>
+      <stop offset="1" stop-color="#B71C1C"/>
+    </linearGradient>
+    <filter id="softShadow" x="-18%" y="-18%" width="136%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000000" flood-opacity="0.24"/>
+    </filter>
+    <clipPath id="globeClip">
+      <circle cx="279" cy="246" r="55"/>
+    </clipPath>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M177 128L307 73" fill="none" stroke="#FEF7F2" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="313" cy="70" r="19" fill="#FEF7F2"/>
+    <path d="M148 118H193C205 118 215 128 215 140V159H148V118Z" fill="#E53935"/>
+    <rect x="68" y="150" width="296" height="176" rx="40" fill="url(#radioBody)"/>
+    <path d="M104 325H135V335C135 344 128 352 119 352C111 352 104 344 104 335V325Z" fill="#FEF7F2"/>
+    <path d="M298 325H329V335C329 344 322 352 313 352C305 352 298 344 298 335V325Z" fill="#FEF7F2"/>
+    <circle cx="113" cy="201" r="16" fill="#15171C"/>
+    <rect x="98" y="258" width="78" height="17" rx="9" fill="#15171C"/>
+    <rect x="98" y="288" width="78" height="17" rx="9" fill="#15171C"/>
+    <circle cx="279" cy="246" r="72" fill="#15171C"/>
+    <circle cx="279" cy="246" r="55" fill="url(#redGradient)"/>
+    <g clip-path="url(#globeClip)" stroke="#15171C" stroke-width="8" stroke-linecap="round">
+      <path d="M279 184V308"/>
+      <path d="M224 246H334"/>
+      <path d="M232 212H326"/>
+      <path d="M232 280H326"/>
+      <path d="M258 186C242 214 242 278 258 306"/>
+      <path d="M300 186C316 214 316 278 300 306"/>
+    </g>
+    <circle cx="279" cy="246" r="55" fill="none" stroke="#15171C" stroke-width="8"/>
+  </g>
+</svg>

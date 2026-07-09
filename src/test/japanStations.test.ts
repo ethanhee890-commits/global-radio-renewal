@@ -4,22 +4,21 @@ import { getFallbackStations } from '../lib/radioBrowser';
 import { scoreStationQuality } from '../lib/qualityScore';
 
 describe('Japan priority radio seeds', () => {
-  it('returns a larger Japan priority catalog with verified public picks included', () => {
+  it('returns verified Japan priority stations first by quality', () => {
     const stations = getFallbackStations({
-      country: 'JP',
+      country: 'Japan',
       language: 'japanese',
       tag: 'japan-priority'
     });
 
-    const stationIds = new Set(stations.map((station) => station.stationuuid));
-
-    expect(stations.length).toBeGreaterThanOrEqual(10);
+    expect(stations.map((station) => station.stationuuid)).toEqual([
+      'seed-jp-nhk-world-radio',
+      'seed-jp-shonan-beach-fm',
+      'seed-jp-fm-kahoku'
+    ]);
     expect(stations.every((station) => station.countrycode === 'JP')).toBe(true);
-    expect(stationIds.has('seed-jp-nhk-world-radio')).toBe(true);
-    expect(stationIds.has('seed-jp-shonan-beach-fm')).toBe(true);
-    expect(stationIds.has('seed-jp-fm-kahoku')).toBe(true);
-    expect(stationIds.has('seed-jp-chofu-fm')).toBe(true);
-    expect(scoreStationQuality(stations.find((station) => station.stationuuid === 'seed-jp-nhk-world-radio')!).grade).toBe('excellent');
+    expect(scoreStationQuality(stations[0]).grade).toBe('excellent');
+    expect(stations[0].url_resolved).toContain('nhkworld.jp');
   });
 
   it('keeps radiko-only and unofficial NHK mirror URLs out of curated seeds', () => {

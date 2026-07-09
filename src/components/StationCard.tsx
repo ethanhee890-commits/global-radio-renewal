@@ -1,7 +1,9 @@
-import { ExternalLink, Heart, Play, Radio, Youtube } from 'lucide-react';
-import { getYouTubeAlternate } from '../data/youtubeAlternates.seed';
+import { ExternalLink, Heart, Play, Radio, Trash2, Youtube } from 'lucide-react';
+import { useState } from 'react';
+import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
 import { scoreStationQuality } from '../lib/qualityScore';
-import type { RadioStation, StationQualityOptions } from '../types/station';
+import { getSafeNetworkUrl } from '../lib/urlSafety';
+import type { RadioStation } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 
 function getStationInitial(name: string): string {
@@ -25,7 +27,7 @@ export function StationCard({
   onSelect,
   onToggleFavorite,
   onChooseYouTube,
-  qualityOptions
+  onRemove
 }: {
   station: RadioStation;
   isFavorite: boolean;
@@ -35,23 +37,38 @@ export function StationCard({
   onSelect: (station: RadioStation) => void;
   onToggleFavorite: (station: RadioStation) => void;
   onChooseYouTube: (station: RadioStation) => void;
-  qualityOptions?: StationQualityOptions;
+  onRemove?: (station: RadioStation) => void;
 }) {
-  const quality = scoreStationQuality(station, qualityOptions);
-  const alternate = getYouTubeAlternate(station.stationuuid);
+  const [faviconFailed, setFaviconFailed] = useState(false);
+  const quality = scoreStationQuality(station);
+  const alternate = getYouTubeAlternateForStation(station);
   const tags = getTagList(station.tags);
+  const faviconUrl = getSafeNetworkUrl(station.favicon);
 
   return (
     <article className={`station-card ${active ? 'is-active' : ''}`}>
       <div className="station-card-main">
-        <span className="station-avatar" aria-hidden="true">
-          {getStationInitial(station.name)}
-        </span>
+        {faviconUrl && !faviconFailed ? (
+          <img
+            src={faviconUrl}
+            alt={`${station.name} 방송국 로고`}
+            onError={(event) => {
+              event.currentTarget.hidden = true;
+              setFaviconFailed(true);
+            }}
+          />
+        ) : (
+          <span className="station-avatar" aria-hidden="true">
+            {getStationInitial(station.name)}
+          </span>
+        )}
         <div>
           <button className="station-title-button" type="button" onClick={() => onSelect(station)}>
             <strong>{station.name}</strong>
           </button>
-          <p>{[station.country, station.language].filter(Boolean).join(' / ') || '출처 정보 확인 필요'}</p>
+          <p>
+            {[station.country, station.language].filter(Boolean).join(' · ') || '출처 정보 확인 필요'}
+          </p>
         </div>
       </div>
 
@@ -59,7 +76,7 @@ export function StationCard({
         <QualityBadge quality={quality} />
         <span>
           <Radio aria-hidden="true" size={14} />
-          {station.codec || 'codec ?'} / {station.bitrate ? `${station.bitrate}kbps` : 'bitrate ?'} / {station.hls === 1 ? 'HLS' : 'Direct'}
+          {station.codec || 'codec ?'} · {station.bitrate ? `${station.bitrate}kbps` : 'bitrate ?'} · {station.hls === 1 ? 'HLS' : 'Direct'}
         </span>
       </div>
 
@@ -74,18 +91,24 @@ export function StationCard({
       <div className="station-actions">
         <button className="radio-button primary" type="button" onClick={() => onPlay(station)} aria-label={`${station.name} 재생하기`}>
           <Play aria-hidden="true" size={17} />
-          재생
+          재생하기
         </button>
         <button
           className="radio-button secondary"
           type="button"
           onClick={() => onToggleFavorite(station)}
           aria-pressed={isFavorite}
-          aria-label={isFavorite ? `${station.name} 저장 해제` : `${station.name} 저장`}
+          aria-label={isFavorite ? `${station.name} 즐겨찾기 해제` : `${station.name} 즐겨찾기에 추가`}
         >
           <Heart aria-hidden="true" size={17} fill={isFavorite ? 'currentColor' : 'none'} />
           {isFavorite ? '저장됨' : '저장'}
         </button>
+        {onRemove ? (
+          <button className="radio-button secondary danger" type="button" onClick={() => onRemove(station)} aria-label={`${station.name} 최근 들은 방송에서 삭제`}>
+            <Trash2 aria-hidden="true" size={17} />
+            삭제
+          </button>
+        ) : null}
       </div>
 
       {showYouTubeAlternate && alternate && (quality.grade === 'low' || quality.grade === 'failed') ? (

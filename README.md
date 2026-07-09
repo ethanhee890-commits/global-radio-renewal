@@ -1,44 +1,75 @@
-# 지구라디오
+# 틈숨
 
-전세계 공개 인터넷 라디오를 검색하고, 품질 좋은 직접 스트림을 우선 재생하는 모바일 PWA입니다. Radio Browser API를 기본 검색원으로 사용하고, API가 느리거나 실패해도 14개 국가 51개 curated seed로 바로 들을 수 있게 구성했습니다.
+브랜딩 결과물의 추천안인 `틈숨`을 실제 브라우저에서 실행 가능한 온라인 휴식 채팅 커뮤니티 MVP로 구현한 프로젝트입니다.
 
-일본은 우선 국가로 다룹니다. NHK WORLD-JAPAN Radio, Shonan Beach FM, FM Kahoku, Chofu FM 등 일본 seed 12개와 JP country-code 검색을 우선 지원하며, radiko 전용 권역 제한 방송은 우회 없이 제외합니다.
+## 실행 방법
 
-## 주요 기능
-
-- Radio Browser API 기반 전세계 공개 인터넷 라디오 검색
-- 기본 discovery에서 일본, 한국, 미국, 영국, 독일, 프랑스, 캐나다, 호주, 네덜란드, 브라질, 스페인, 이탈리아, 대만, 싱가포르 우선 조회
-- codec, bitrate, HLS, lastcheckok, ssl_error, HTTPS 기준 품질 점수 계산
-- 고음질 방송 우선 정렬
-- direct radio stream은 HTML audio로 재생
-- 공식 now-playing API가 연결된 방송은 현재 프로그램명과 곡명 표시
-- OS 미디어 UI에는 Media Session metadata로 현재 곡/방송국 정보 전달
-- 직접 스트림 품질이 낮거나 실패했고 검증된 공식 YouTube 대체 소스가 있을 때만 visible YouTube IFrame Player 표시
-- YouTube 오디오 추출, hidden iframe, background player, yt-dlp/youtube-dl 미사용
-- 즐겨찾기, 최근 들은 방송, 라디오 알람 설정을 localStorage에 저장
-- 앱이 열린 상태에서 지정 시간에 선택한 라디오 채널 재생을 시도하는 아침 알람 MVP
-- 360px 모바일 폭 대응
-
-## 실행
+일반 Node/npm 환경에서는 아래 명령을 사용합니다.
 
 ```bash
 npm install
 npm run dev
 ```
 
-현재 개발 확인 URL:
+브라우저 확인 주소는 다음과 같습니다.
 
 ```text
-http://127.0.0.1:5179/
+http://127.0.0.1:5173/
+```
+
+현재 Codex Desktop 환경처럼 `npm`이 PATH에 없는 경우, 번들 Node로 Vite를 직접 실행할 수 있습니다.
+
+```powershell
+& "C:\Users\rooki\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173
+```
+
+## 주요 구현 범위
+
+- 실시간 휴식방 UX: 옥상바람, 야간정류장, 우주창가, 캠퍼스계단, 무음실
+- 호흡 코어 인터랙션: press 들숨, press out 날숨, 한숨 소리, 진행률, 타이머, 초기화
+- 익명 채팅: 50자 제한, 빠른 문장, 로컬 닉네임, 감정 배지
+- 안전 장치: 금칙어 흐림, 개인정보 유도 차단, 도배 제한, 무음실 채팅 잠금
+- 신고 흐름: 모달, 입력 검증, localStorage 운영 큐, 접수 토스트
+- 메뉴: 닉네임 저장/재생성, 이용 가이드, 운영 원칙
+- 반응형 화면: 데스크톱 3열, 태블릿 2열, 모바일 단일 열
+
+## 파일 구조
+
+```text
+src/main.tsx                 앱 진입점
+src/TeumSoomApp.tsx          틈숨 React 화면과 상호작용
+src/teumsoom.css             틈숨 전용 디자인/반응형 스타일
+src/teumsoom/data.ts         방, 무드, 빠른 문장, 안내 데이터
+src/teumsoom/moderation.ts   메시지/신고 검증 로직
+src/teumsoom/storage.ts      localStorage 기반 닉네임/방/상태 저장
+src/teumsoom/types.ts        틈숨 도메인 타입
+src/test/teumsoom.test.ts    검열/신고 검증 테스트
+branding-package/            브랜딩 산출물
+docs/damta-service-analysis.md 기존 담타 분석 문서
+docs/teumsoom-risk-register.md 리스크와 다음 개선 과제
 ```
 
 ## 검증
 
-```bash
-npm run verify
-npm audit
+이 환경에서는 `npm` 대신 번들 Node로 아래 검증을 수행했습니다.
+
+```powershell
+& "C:\Users\rooki\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" node_modules/eslint/bin/eslint.js . --max-warnings=0
+& "C:\Users\rooki\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" node_modules/typescript/bin/tsc --noEmit
+& "C:\Users\rooki\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" node_modules/vitest/vitest.mjs run
+& "C:\Users\rooki\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" node_modules/vite/bin/vite.js build
 ```
 
-## 참고
+브라우저 검증 산출물:
 
-브라우저와 iOS Safari는 사용자 동작 없이 오디오 자동 재생을 막을 수 있습니다. 그래서 알람은 앱이 열려 있을 때 정해진 시각에 재생을 시도하고, 재생이 차단되면 사용자가 바로 재생 버튼을 누를 수 있게 안내합니다. 닫힌 앱/백그라운드에서 정확한 알람 재생을 보장하려면 네이티브 앱 또는 서버 push 기반 설계가 필요합니다.
+```text
+output/teumsoom-desktop-v2.png
+output/teumsoom-mobile-v3.png
+```
+
+## 현재 한계
+
+- 실제 WebSocket, DB, 인증, 운영자 신고 큐는 아직 연결하지 않은 로컬 MVP입니다.
+- 접속자 수와 초기 메시지는 검토용 Mock 데이터입니다.
+- 한숨 소리는 Web Audio 기반 임시 효과음입니다.
+- 운영 리스크 상세는 `docs/teumsoom-risk-register.md`에 정리했습니다.
