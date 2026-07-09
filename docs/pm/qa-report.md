@@ -808,3 +808,65 @@ tags:
 
 - Android/iOS physical-device install from the qa10 package
 - Runtime verification that no third-party Capacitor/Cordova component expects the removed external file provider path; build/lint passed and no app code references it
+
+## 2026-07-10 QA12 Production And APK Follow-up
+
+### Findings
+
+- The MBC Radio verified YouTube fallback used a channel `live_stream` embed. The visible iframe mounted correctly, but the embedded YouTube surface could show an unavailable video state instead of a playable official stream.
+- `scripts/build-android.ps1` did not stop on a failing Gradle exit code because PowerShell external commands do not throw automatically. This could make a failed package build look successful to npm callers.
+
+### Fixed
+
+- `yt-mbc-radio-official` now points to the currently verified official MBC Radio video ID `-icaXPo67uE` instead of the unstable channel `live_stream` embed.
+- YouTube fallback tests now assert the MBC alternate is an embeddable `youtube_video`.
+- Android build script now throws when `android:sync` or Gradle returns a non-zero exit code.
+- Corrupted local Gradle `caches/8.14.3` metadata was cleared and regenerated before rebuilding the debug APK.
+
+### Automated Checks
+
+- `npm.cmd run verify`: PASS
+  - lint: PASS
+  - typecheck: PASS
+  - Vitest: PASS, 15 files / 58 tests
+  - production build: PASS
+  - security scan: PASS
+- `npm.cmd test -- youtubeFallbackUi.test.tsx playbackSource.test.ts japanStations.test.ts`: PASS, 3 files / 16 tests
+- `npm.cmd audit --omit=dev`: PASS, 0 vulnerabilities
+- `npm.cmd run android:debug`: PASS after Gradle cache regeneration
+
+### Rendered Production QA
+
+- URL: `https://ethanhee890-commits.github.io/global-radio-pwa/`
+- Mobile 360px:
+  - Page title: `Jigu Radio` browser title equivalent is `지구라디오`
+  - Bottom navigation widths: equal, 75px each
+  - Horizontal overflow: none
+  - Console warning/error: none
+  - MBC FM4U search result count: 2
+  - Official YouTube CTA count: 2
+  - YouTube fallback iframe visible: yes, 262px x 220px
+  - YouTube fallback iframe URL: `https://www.youtube.com/embed/-icaXPo67uE?rel=0&origin=https%3A%2F%2Fethanhee890-commits.github.io`
+- Mobile 390px:
+  - Settings helper copy is web-scoped
+  - Alarm action is disabled on web
+  - Hour/minute values render without leading-zero lock
+  - Horizontal overflow: none
+
+### Package Evidence
+
+- Latest APK release asset: `jigu-radio-latest-debug.apk`
+- QA12 APK release asset: `jigu-radio-debug-2026-07-10-qa12.apk`
+- APK size: `28602704`
+- APK SHA-256: `BB68109E11B9266D749BC5BB78BD77DFA897A4DC9C832981735205C9A97BEA8F`
+- Release asset HEAD check: PASS, HTTP 200, `application/vnd.android.package-archive`
+- GitHub Pages deployment for commit `3529c39`: PASS
+- APK bundled public JS contains MBC video ID `-icaXPo67uE`: yes
+- APK bundled public JS contains old MBC channel embed URL `live_stream?channel=UCKNZsAeQXpvI-Mpoc0ZKhsA`: no
+
+### Not Checked
+
+- Android physical-device install and audio output from the QA12 APK
+- iOS physical-device install
+- iOS Safari direct stream playback rate
+- Long-running background playback and alarm behavior on real devices
