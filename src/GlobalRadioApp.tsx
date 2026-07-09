@@ -246,7 +246,7 @@ function getQueryAfterFilterChange(query: string, countries: RadioBrowserFilterO
 }
 
 function getResultCountLabel(view: ViewKey, loading: boolean, count: number): string {
-  if (view === 'discover' && loading && count === 0) {
+  if (view === 'discover' && loading) {
     return '검색 중';
   }
 
@@ -647,6 +647,8 @@ export default function GlobalRadioApp() {
       setQuery(nextQuery);
     }
 
+    setListError('');
+    setLoading(true);
     autoInferredCountryRef.current = '';
     setFilters(nextFilters);
   }
@@ -656,6 +658,8 @@ export default function GlobalRadioApp() {
     const nextAutoInferredCountry = inferCountryFromQuery(nextQuery, filterOptions.countries);
     autoInferredCountryRef.current = nextAutoInferredCountry;
 
+    setListError('');
+    setLoading(true);
     setQuery(nextQuery);
     setFilters((current) => {
       const nextState = getFilterStateAfterQueryChange(current, nextQuery, filterOptions.countries, previousAutoInferredCountry);
@@ -678,6 +682,8 @@ export default function GlobalRadioApp() {
       tag
     };
 
+    setListError('');
+    setLoading(true);
     setQuery('');
     autoInferredCountryRef.current = '';
     setFilters(nextFilters);

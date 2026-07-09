@@ -936,3 +936,70 @@ tags:
 - iOS physical-device install
 - iOS Safari direct stream playback rate
 - Long-running background playback and alarm behavior on real devices
+
+## 2026-07-10 QA14 Search/Filter Refresh Follow-up
+
+### Finding
+
+- When the user searched `japan` and then manually changed the country filter to `Spain`, the country filter updated immediately but the old Japan station cards could remain visible during the debounce window.
+- This created a short but confusing state where the filter and result cards appeared to disagree.
+
+### Fixed
+
+- Search query changes, country/filter changes, and Japan quick actions now clear list errors and enter the loading state immediately.
+- Discover result count now shows `검색 중` whenever the discover list is refreshing, even if the previous list had results.
+- Added a regression expectation for the loading count label while a populated discover list is refreshing.
+
+### Automated Checks
+
+- `npm.cmd test -- globalRadioFilterInference.test.ts`: PASS, 1 file / 8 tests
+- `npm.cmd run typecheck`: PASS
+- `npm.cmd run verify`: PASS
+  - lint: PASS
+  - typecheck: PASS
+  - Vitest: PASS, 16 files / 59 tests
+  - production build: PASS
+  - security scan: PASS
+- `npm.cmd run android:debug`: PASS
+
+### Rendered Local QA
+
+- URL: `http://127.0.0.1:5179/`
+- Mobile 390px search/filter flow:
+  - Initial station cards loaded: 168
+  - Searching `japan` sets the country filter to `Japan (JP)` and returns Japan stations
+  - Changing the country filter to `Spain` immediately hides old station cards and shows 5 loading skeletons
+  - During refresh, result count label shows `검색 중`
+  - After refresh, Spain stations render and the result count updates to `162개 방송`
+  - Horizontal overflow: none
+  - Console warning/error: none
+- YouTube fallback policy recheck:
+  - MBC FM4U search exposes official YouTube CTA buttons
+  - Clicking a CTA opens one visible YouTube iframe, 292px x 220px
+  - Hidden YouTube iframe count: 0
+  - Iframe URL uses the verified MBC video ID `-icaXPo67uE`
+- Settings/alarm recheck:
+  - Hour/minute values accept `23` and `59` without leading-zero lock
+  - `시` and `분` labels are outside the input boxes
+  - Duplicate recent/favorite delete buttons in settings: none
+  - Horizontal overflow: none
+- Desktop 1024px:
+  - Station cards loaded: 168
+  - Bottom navigation widths: equal, 124px each
+  - Horizontal overflow: none
+  - Console warning/error: none
+
+### Package Evidence
+
+- Latest APK release asset: `jigu-radio-latest-debug.apk`
+- QA14 APK release asset: `jigu-radio-debug-2026-07-10-qa14.apk`
+- APK size: `28602704`
+- APK SHA-256: `826E0D890AFBFB47A82F891B34C69067C3943EAAD0EE80ECFFC1E9019ABC1F4A`
+- Release asset HEAD check: PASS, HTTP 200, `application/vnd.android.package-archive`
+
+### Not Checked
+
+- Android physical-device install and audio output from the QA14 APK
+- iOS physical-device install
+- iOS Safari direct stream playback rate
+- Long-running background playback and alarm behavior on real devices

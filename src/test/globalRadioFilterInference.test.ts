@@ -103,8 +103,9 @@ describe('global radio search and filter relationship', () => {
     });
   });
 
-  it('does not show zero stations while the discover list is still loading', () => {
+  it('shows a loading label while the discover list is refreshing', () => {
     expect(__globalRadioTestHooks.getResultCountLabel('discover', true, 0)).toBe('검색 중');
+    expect(__globalRadioTestHooks.getResultCountLabel('discover', true, 24)).toBe('검색 중');
     expect(__globalRadioTestHooks.getResultCountLabel('discover', false, 0)).toBe('0개 방송');
     expect(__globalRadioTestHooks.getResultCountLabel('recent', true, 0)).toBe('0개 방송');
   });
