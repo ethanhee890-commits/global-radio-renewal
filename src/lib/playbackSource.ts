@@ -9,7 +9,7 @@ export function shouldOfferYouTubeAlternate(station: RadioStation, alternate?: Y
   }
 
   const quality = scoreStationQuality(station);
-  return quality.grade === 'low' || quality.grade === 'failed';
+  return !quality.isLikelyPlayable || quality.grade === 'low' || quality.grade === 'failed';
 }
 
 export function getPreferredSource(station: RadioStation, alternate?: YouTubeAlternateSource | null): PlaybackSourceRecommendation {

@@ -197,6 +197,39 @@ function alignFiltersWithQuery(filters: RadioFilters, query: string, countries: 
   };
 }
 
+function getFilterStateAfterQueryChange(
+  filters: RadioFilters,
+  query: string,
+  countries: RadioBrowserFilterOption[],
+  autoInferredCountry: string
+): { filters: RadioFilters; autoInferredCountry: string } {
+  const inferredCountry = inferCountryFromQuery(query, countries);
+
+  if (inferredCountry) {
+    return {
+      filters: alignFiltersWithQuery(filters, query, countries),
+      autoInferredCountry: inferredCountry
+    };
+  }
+
+  if (autoInferredCountry && filters.country === autoInferredCountry) {
+    return {
+      filters: {
+        ...filters,
+        country: '',
+        language: '',
+        tag: ''
+      },
+      autoInferredCountry: ''
+    };
+  }
+
+  return {
+    filters,
+    autoInferredCountry: ''
+  };
+}
+
 function getStationSearchQuery(query: string, countries: RadioBrowserFilterOption[]): string {
   return inferCountryFromQuery(query, countries) ? '' : query;
 }
@@ -224,6 +257,7 @@ function getResultCountLabel(view: ViewKey, loading: boolean, count: number): st
 export const __globalRadioTestHooks = {
   inferCountryFromQuery,
   alignFiltersWithQuery,
+  getFilterStateAfterQueryChange,
   getStationSearchQuery,
   getQueryAfterFilterChange,
   getResultCountLabel,
@@ -299,6 +333,7 @@ export default function GlobalRadioApp() {
   const pendingPlaybackStationRef = useRef<RadioStation | null>(null);
   const activeStationRef = useRef<RadioStation | null>(null);
   const sheetDragRef = useRef<{ startY: number; pointerId: number } | null>(null);
+  const autoInferredCountryRef = useRef('');
   const [view, setView] = useState<ViewKey>('discover');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<RadioFilters>(DEFAULT_FILTERS);
@@ -460,7 +495,13 @@ export default function GlobalRadioApp() {
   }, []);
 
   useEffect(() => {
-    setFilters((current) => alignFiltersWithQuery(current, query, filterOptions.countries));
+    const previousAutoInferredCountry = autoInferredCountryRef.current;
+    const nextAutoInferredCountry = inferCountryFromQuery(query, filterOptions.countries);
+    autoInferredCountryRef.current = nextAutoInferredCountry;
+    setFilters((current) => {
+      const nextState = getFilterStateAfterQueryChange(current, query, filterOptions.countries, previousAutoInferredCountry);
+      return nextState.filters;
+    });
   }, [filterOptions.countries, query]);
 
   useEffect(() => {
@@ -606,17 +647,27 @@ export default function GlobalRadioApp() {
       setQuery(nextQuery);
     }
 
+    autoInferredCountryRef.current = '';
     setFilters(nextFilters);
   }
 
   function updateQuery(nextQuery: string) {
+    const previousAutoInferredCountry = autoInferredCountryRef.current;
+    const nextAutoInferredCountry = inferCountryFromQuery(nextQuery, filterOptions.countries);
+    autoInferredCountryRef.current = nextAutoInferredCountry;
+
     setQuery(nextQuery);
-    setFilters((current) => alignFiltersWithQuery(current, nextQuery, filterOptions.countries));
+    setFilters((current) => {
+      const nextState = getFilterStateAfterQueryChange(current, nextQuery, filterOptions.countries, previousAutoInferredCountry);
+      return nextState.filters;
+    });
   }
 
   function submitSearch() {
-    const nextFilters = alignFiltersWithQuery(filters, query, filterOptions.countries);
+    const nextState = getFilterStateAfterQueryChange(filters, query, filterOptions.countries, autoInferredCountryRef.current);
+    const nextFilters = nextState.filters;
     const nextStationSearchQuery = getStationSearchQuery(query, filterOptions.countries);
+    autoInferredCountryRef.current = nextState.autoInferredCountry;
     setFilters(nextFilters);
     void loadStations(nextFilters, nextStationSearchQuery);
   }
@@ -628,6 +679,7 @@ export default function GlobalRadioApp() {
     };
 
     setQuery('');
+    autoInferredCountryRef.current = '';
     setFilters(nextFilters);
     void loadStations(nextFilters, '');
   }

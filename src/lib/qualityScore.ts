@@ -9,12 +9,81 @@ const QUALITY_LABELS: Record<QualityGrade, string> = {
   failed: '재생 실패'
 };
 
+type StreamAccessRisk = {
+  penalty: number;
+  reason: string;
+};
+
+const PROTECTED_STREAM_HOSTS: Array<{ host: string; pathIncludes?: string; penalty: number; reason: string }> = [
+  {
+    host: 'mtist.as.smartstream.ne.jp',
+    penalty: 46,
+    reason: '방송국 접속 제한 신호'
+  },
+  {
+    host: 'www.uniqueradio.jp',
+    pathIncludes: '/agapps/',
+    penalty: 46,
+    reason: '방송국 접속 제한 신호'
+  },
+  {
+    host: 'radiolive.sbs.co.kr',
+    penalty: 46,
+    reason: '만료될 수 있는 방송국 토큰 주소'
+  },
+  {
+    host: 'minimw.imbc.com',
+    penalty: 46,
+    reason: '방송국 앱 전용 주소 신호'
+  }
+];
+
 function normalizeCodec(codec?: string): string {
   return (codec ?? '').trim().toLowerCase();
 }
 
 function getStreamUrl(station: StationQualityInput): string {
   return station.url_resolved || station.url || '';
+}
+
+function getStreamAccessRisk(station: StationQualityInput): StreamAccessRisk | null {
+  const streamUrl = getStreamUrl(station);
+  if (!streamUrl) {
+    return null;
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(streamUrl);
+  } catch {
+    return null;
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  const pathname = parsedUrl.pathname.toLowerCase();
+  const matchedProtectedHost = PROTECTED_STREAM_HOSTS.find((item) => {
+    if (hostname !== item.host) {
+      return false;
+    }
+
+    return item.pathIncludes ? pathname.includes(item.pathIncludes) : true;
+  });
+
+  if (matchedProtectedHost) {
+    return {
+      penalty: matchedProtectedHost.penalty,
+      reason: matchedProtectedHost.reason
+    };
+  }
+
+  if (station.hls === 1 && parsedUrl.searchParams.has('token')) {
+    return {
+      penalty: 34,
+      reason: '만료될 수 있는 방송국 토큰 주소'
+    };
+  }
+
+  return null;
 }
 
 export function isHttpsStream(station: StationQualityInput): boolean {
@@ -28,6 +97,7 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
   const hasBitrate = bitrate > 0;
   const isHttps = isHttpsStream(station);
   const lastcheckok = station.lastcheckok;
+  const accessRisk = getStreamAccessRisk(station);
 
   if (lastcheckok === 0) {
     return {
@@ -51,6 +121,11 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
   if (station.ssl_error === 1) {
     score -= 18;
     reasons.push('SSL 오류 신호 있음');
+  }
+
+  if (accessRisk) {
+    score -= accessRisk.penalty;
+    reasons.push(accessRisk.reason);
   }
 
   if (isHttps) {
@@ -128,7 +203,7 @@ export function scoreStationQuality(station: StationQualityInput): StationQualit
     label: QUALITY_LABELS[grade],
     reasons,
     isHttps,
-    isLikelyPlayable: clampedScore >= 24 && station.ssl_error !== 1
+    isLikelyPlayable: clampedScore >= 24 && station.ssl_error !== 1 && !accessRisk
   };
 }
 

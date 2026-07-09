@@ -70,6 +70,39 @@ describe('global radio search and filter relationship', () => {
     expect(__globalRadioTestHooks.getQueryAfterFilterChange('japan', countries, currentFilters, currentFilters)).toBe('japan');
   });
 
+  it('clears an automatically inferred country when the next search is a station name', () => {
+    const filters: RadioFilters = {
+      country: 'JP',
+      language: '',
+      tag: '',
+      sort: 'quality'
+    };
+
+    expect(__globalRadioTestHooks.getFilterStateAfterQueryChange(filters, 'MBC FM4U', countries, 'JP')).toEqual({
+      filters: {
+        country: '',
+        language: '',
+        tag: '',
+        sort: 'quality'
+      },
+      autoInferredCountry: ''
+    });
+  });
+
+  it('keeps a manually selected country when the user searches within that country', () => {
+    const filters: RadioFilters = {
+      country: 'JP',
+      language: '',
+      tag: '',
+      sort: 'quality'
+    };
+
+    expect(__globalRadioTestHooks.getFilterStateAfterQueryChange(filters, 'NHK', countries, '')).toEqual({
+      filters,
+      autoInferredCountry: ''
+    });
+  });
+
   it('does not show zero stations while the discover list is still loading', () => {
     expect(__globalRadioTestHooks.getResultCountLabel('discover', true, 0)).toBe('검색 중');
     expect(__globalRadioTestHooks.getResultCountLabel('discover', false, 0)).toBe('0개 방송');

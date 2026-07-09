@@ -98,4 +98,26 @@ describe('getPreferredSource', () => {
     expect(shouldOfferYouTubeAlternate(failedStation, alternate)).toBe(true);
     expect(getPreferredSource(failedStation, alternate).preferred).toBe('youtube_alternate');
   });
+
+  it('offers the verified YouTube alternate for protected official-app stream URLs', () => {
+    const protectedStation: RadioStation = {
+      stationuuid: 'radio-browser-dynamic-mbc-id',
+      name: 'MBC FM4U',
+      url: 'https://minimw.imbc.com/dmfm/_definst_/mfm.stream/playlist.m3u8',
+      url_resolved: 'https://minimw.imbc.com/dmfm/_definst_/mfm.stream/playlist.m3u8',
+      country: 'The Republic Of Korea',
+      countrycode: 'KR',
+      language: 'korean',
+      codec: 'AAC+',
+      bitrate: 107,
+      hls: 1,
+      lastcheckok: 1,
+      ssl_error: 0
+    };
+    const alternate = getYouTubeAlternateForStation(protectedStation);
+
+    expect(alternate?.id).toBe('yt-mbc-radio-official');
+    expect(shouldOfferYouTubeAlternate(protectedStation, alternate)).toBe(true);
+    expect(getPreferredSource(protectedStation, alternate).preferred).toBe('youtube_alternate');
+  });
 });
