@@ -639,7 +639,55 @@ tags:
 - `security:scan`이 빌드된 Android WebView asset 경로(`android/app/src/main/assets/public`)까지 확인하도록 확장했고, `.youtube-frame`이 숨겨지거나 1px 플레이어가 되는 회귀를 차단했습니다.
 - 회귀 테스트가 Lofi Girl 공식 영상 ID `X4VbdwhkE10`과 visible iframe/origin 조건을 확인하도록 갱신되었습니다.
 
-### Not Checked Yet
+### Automated Checks
 
-- GitHub Pages 재배포 후 실제 공개 URL에서 `Lofi Girl` 검색 -> YouTube 대체 소스 선택 -> iframe 안의 YouTube 오류 문구 부재 확인
-- Android/iOS 실기기에서 YouTube iframe 재생 버튼 탭 후의 실제 재생 성공 여부
+- `npm.cmd run test -- youtubeFallbackUi playbackSource globalRadioCssRegression`: PASS, 3 files / 15 tests
+- `npm.cmd run security:scan`: PASS
+- `npm.cmd run verify`: PASS
+  - lint: PASS
+  - typecheck: PASS
+  - Vitest: PASS, 15 files / 53 tests
+  - production build: PASS
+  - security scan: PASS
+- `npm.cmd audit --audit-level=moderate`: PASS, vulnerabilities 0
+- `npm.cmd run android:debug`: PASS, debug APK build completed with latest web assets
+
+### Post-deploy Browser QA
+
+- Public URL checked: `https://ethanhee890-commits.github.io/global-radio-pwa/`
+- GitHub Pages run `29043681305`: PASS
+- Mobile 390px:
+  - Page title: `지구라디오`
+  - Horizontal overflow: none
+  - Bottom navigation widths: equal
+  - `Lofi Girl` search result count: 2 cards
+  - Official YouTube CTA count: 1
+  - After CTA tap: exactly one `.youtube-frame`
+  - iframe source: `https://www.youtube.com/embed/X4VbdwhkE10?rel=0&origin=https%3A%2F%2Fethanhee890-commits.github.io`
+  - iframe display: `display: block`, `visibility: visible`, `opacity: 1`
+  - Hidden YouTube iframe count: 0
+  - Old unavailable copy `실시간 스트림 녹화를 볼 수 없습니다.`: absent
+  - `오류 153`: absent
+  - Console warning/error: none
+- Mobile 360px:
+  - Horizontal overflow: none
+  - Bottom navigation widths: equal
+  - Bottom sheet remains open and scrollable
+  - YouTube iframe remains visible at 262px x 220px
+  - Console warning/error: none
+
+### Evidence
+
+- Latest local debug APK: `release\global-radio-android-2026-07-10-qa9\jigu-radio-debug-2026-07-10-qa9.apk`
+- Latest local debug ZIP: `release\global-radio-android-2026-07-10-qa9\jigu-radio-debug-2026-07-10-qa9.zip`
+- APK SHA-256: `65628D1904E11E240FE6FE9F6CDEA309112C26AC45A3E51EEC86138FB0837AA3`
+- ZIP SHA-256: `057F77785399EBF07A7B9A11F45C4A7F8A0FDD3E7F2915EE1C89B8206CF0C9DE`
+- Release asset URLs returned `200 OK` after GitHub redirect.
+
+### Not Checked
+
+- Android/iOS 실기기에서 YouTube iframe 재생 버튼 탭 후의 실제 음성 재생 성공 여부
+- Real direct-stream audio success rate on physical Android/iOS devices
+- Real Android exact alarm behavior at wall-clock time
+- iOS native archive/signing and physical-device smoke test
+- Long-running stream stability across multiple stations
