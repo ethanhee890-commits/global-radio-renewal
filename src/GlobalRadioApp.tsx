@@ -212,7 +212,10 @@ export const __globalRadioTestHooks = {
   inferCountryFromQuery,
   alignFiltersWithQuery,
   getStationSearchQuery,
-  getQueryAfterFilterChange
+  getQueryAfterFilterChange,
+  clampTimePart,
+  formatAlarmTime,
+  getAlarmHelperCopy
 };
 
 function stationFromStored(station: StoredStation): RadioStation {
