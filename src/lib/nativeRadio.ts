@@ -99,24 +99,11 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   return requested.display === 'granted';
 }
 
-export async function scheduleRadioAlarm(station: RadioStation, hour: number, minute: number): Promise<RadioAlarmScheduleResult> {
-  const streamUrl = getSafeNetworkUrl(station.url_resolved) || getSafeNetworkUrl(station.url);
-  if (!streamUrl) {
-    throw new Error('Invalid stream URL');
-  }
-
-  const platform = getNativePlatform();
-  const hasNotificationPermission = await ensureNotificationPermission();
-  if (!hasNotificationPermission) {
-    return {
-      scheduled: false,
-      exactAllowed: false,
-      nativeAutoPlay: false,
-      platform
-    };
-  }
-
+async function cancelLocalAlarmNotification(): Promise<void> {
   await LocalNotifications.cancel({ notifications: [{ id: ALARM_NOTIFICATION_ID }] });
+}
+
+async function scheduleLocalAlarmNotification(station: RadioStation, hour: number, minute: number): Promise<void> {
   await LocalNotifications.schedule({
     notifications: [
       {
@@ -135,6 +122,26 @@ export async function scheduleRadioAlarm(station: RadioStation, hour: number, mi
       }
     ]
   });
+}
+
+export async function scheduleRadioAlarm(station: RadioStation, hour: number, minute: number): Promise<RadioAlarmScheduleResult> {
+  const streamUrl = getSafeNetworkUrl(station.url_resolved) || getSafeNetworkUrl(station.url);
+  if (!streamUrl) {
+    throw new Error('Invalid stream URL');
+  }
+
+  const platform = getNativePlatform();
+  const hasNotificationPermission = await ensureNotificationPermission();
+  if (!hasNotificationPermission) {
+    return {
+      scheduled: false,
+      exactAllowed: false,
+      nativeAutoPlay: false,
+      platform
+    };
+  }
+
+  await cancelLocalAlarmNotification();
 
   if (canUseNativeRadioPlayback()) {
     const result = await NativeRadio.scheduleAlarm({
@@ -145,13 +152,26 @@ export async function scheduleRadioAlarm(station: RadioStation, hour: number, mi
       subtitle: [station.country, station.language].filter(Boolean).join(' / ') || 'Alarm playback'
     });
 
+    if (!result.scheduled) {
+      return {
+        scheduled: false,
+        exactAllowed: Boolean(result.exactAllowed),
+        nativeAutoPlay: false,
+        platform
+      };
+    }
+
+    await scheduleLocalAlarmNotification(station, hour, minute);
+
     return {
-      scheduled: Boolean(result.scheduled),
+      scheduled: true,
       exactAllowed: Boolean(result.exactAllowed),
-      nativeAutoPlay: Boolean(result.scheduled),
+      nativeAutoPlay: true,
       platform
     };
   }
+
+  await scheduleLocalAlarmNotification(station, hour, minute);
 
   return {
     scheduled: true,
@@ -163,7 +183,7 @@ export async function scheduleRadioAlarm(station: RadioStation, hour: number, mi
 
 export async function cancelRadioAlarm(): Promise<void> {
   if (canUseNativeNotifications()) {
-    await LocalNotifications.cancel({ notifications: [{ id: ALARM_NOTIFICATION_ID }] });
+    await cancelLocalAlarmNotification();
   }
 
   if (canUseNativeRadioPlayback()) {

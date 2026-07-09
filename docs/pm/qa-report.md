@@ -258,3 +258,40 @@ tags:
 ### Not Checked
 
 - Long-term persistence when the browser permanently denies storage writes; current session remains usable, but denied storage cannot be persisted by design.
+
+## 2026-07-10 Android Alarm Scheduling Follow-up
+
+### Fixed
+
+- Android에서 정확한 알람 권한이 없거나 네이티브 자동 재생 알람 예약이 실패했는데도, 그 전에 로컬 알림이 먼저 예약되어 앱은 `알람 꺼짐`으로 보이지만 나중에 알림이 울릴 수 있는 상태 불일치를 수정했습니다.
+- 기존 로컬 알림은 먼저 취소하되, Android에서는 네이티브 자동 재생 알람 예약이 성공한 뒤에만 동반 로컬 알림을 예약하도록 순서를 조정했습니다.
+- iOS는 기존 의도대로 자동 재생 없이 로컬 알림만 예약하는 흐름을 유지했습니다.
+
+### Automated Checks
+
+- `npm.cmd run test -- nativeRadio`: PASS, 3 tests
+- `npm.cmd run verify`: PASS
+  - lint, typecheck, Vitest, production build, security scan all passed
+  - Vitest suite: 15 files / 51 tests
+- `npm.cmd audit --audit-level=moderate`: PASS, 0 vulnerabilities
+- `npm.cmd run android:debug`: PASS, debug APK build completed
+
+### Rendered Browser QA
+
+- In-app Browser path: FAILED
+  - Browser runtime connection timed out after 120 seconds and reset.
+  - Fallback QA used Playwright with system Chrome.
+- Mobile 390px Chrome via Playwright/system Chrome: PASS
+  - Flow: app load -> open Settings tab -> inspect radio alarm panel
+  - Web-scoped alarm copy is shown
+  - Web alarm button is disabled as expected
+  - Hour/minute inputs remain visible on one row
+  - Horizontal overflow: none
+  - Bottom navigation widths equal: `86, 86, 86, 86`
+  - Console warning/error: none
+  - Page errors: none
+
+### Not Checked
+
+- Real Android exact alarm permission screen behavior on a physical device
+- Real scheduled alarm playback at wall-clock time on Android
