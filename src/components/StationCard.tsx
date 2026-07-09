@@ -1,9 +1,7 @@
 import { ExternalLink, Heart, Play, Radio, Trash2, Youtube } from 'lucide-react';
-import { useState } from 'react';
 import { getYouTubeAlternateForStation } from '../data/youtubeAlternates.seed';
 import { shouldOfferYouTubeAlternate } from '../lib/playbackSource';
 import { scoreStationQuality } from '../lib/qualityScore';
-import { getSafeNetworkUrl } from '../lib/urlSafety';
 import type { RadioStation } from '../types/station';
 import { QualityBadge } from './QualityBadge';
 
@@ -40,29 +38,16 @@ export function StationCard({
   onChooseYouTube: (station: RadioStation) => void;
   onRemove?: (station: RadioStation) => void;
 }) {
-  const [faviconFailed, setFaviconFailed] = useState(false);
   const quality = scoreStationQuality(station);
   const alternate = getYouTubeAlternateForStation(station);
   const tags = getTagList(station.tags);
-  const faviconUrl = getSafeNetworkUrl(station.favicon);
 
   return (
     <article className={`station-card ${active ? 'is-active' : ''}`}>
       <div className="station-card-main">
-        {faviconUrl && !faviconFailed ? (
-          <img
-            src={faviconUrl}
-            alt={`${station.name} 방송국 로고`}
-            onError={(event) => {
-              event.currentTarget.hidden = true;
-              setFaviconFailed(true);
-            }}
-          />
-        ) : (
-          <span className="station-avatar" aria-hidden="true">
-            {getStationInitial(station.name)}
-          </span>
-        )}
+        <span className="station-avatar" aria-hidden="true">
+          {getStationInitial(station.name)}
+        </span>
         <div>
           <button className="station-title-button" type="button" onClick={() => onSelect(station)}>
             <strong>{station.name}</strong>

@@ -9,7 +9,7 @@ tags:
   - japan-radio
 ---
 
-# QA Report — 지구라디오 일본 방송 보강
+# QA Report — 지구라디오 모바일 재생/검색 QA
 
 ## Scope
 
@@ -19,6 +19,8 @@ tags:
 - radiko 우회/비공식 NHK 미러 제외
 - 국가가 전체일 때 일본 전용 장르가 노출되지 않도록 필터 옵션 관계 검증
 - 직접 라디오 스트림이 양호한 상태에서는 YouTube 대체 플레이어를 상시 노출하지 않고, 낮은 품질 또는 실패 상태에서만 노출
+- 직접 재생 실패 후 사용자가 YouTube 대체 소스를 선택하면 모바일 바텀시트 안에서 visible iframe을 단일 렌더링
+- 모바일 카드에서 외부 방송국 파비콘을 직접 로드하지 않고 안정적인 이니셜 아바타를 사용해 외부 이미지 402/404/ORB 콘솔 오류 제거
 - 런타임 YouTube 금지 패턴과 빌드 산출물 public asset 경로를 security scan에 추가
 
 ## Automated Checks
@@ -26,30 +28,47 @@ tags:
 - `npm.cmd run verify`: PASS
   - lint: PASS
   - typecheck: PASS
-  - vitest: 12 files / 40 tests PASS
+  - vitest: 12 files / 41 tests PASS
   - build: PASS
   - security scan: PASS, includes runtime YouTube policy scan and built `dist` public asset path scan
-- `npm.cmd audit --omit=dev`: PASS, production vulnerabilities 0
+- `npm.cmd audit --audit-level=moderate`: PASS, vulnerabilities 0
 
 ## Browser Checks
 
 - URL: `http://127.0.0.1:5179/`
-- Desktop Browser check: PASS
-  - Japan CTA visible and clickable
-  - Result order: NHK WORLD-JAPAN Radio, Shonan Beach FM 78.9, FM Kahoku 78.7
-  - Detail panel selects NHK WORLD-JAPAN Radio after Japan CTA
-  - radiko limitation notice visible
+- In-app Browser check: NOT CHECKED in this pass
+  - Browser bootstrap timed out after 120 seconds.
+  - Fallback rendered QA used Playwright with system Chrome.
+- Desktop 1280px Chrome check: PASS
+  - App title and station cards render
+  - Result heading: `168개 방송`
+  - Horizontal overflow: none
+  - Console warn/error after settled load: none
+  - Request failures after settled load: none
+- Mobile 360px Chrome check: PASS
+  - App title and station cards render
+  - Horizontal overflow: none
+  - Bottom navigation widths equal: `79, 79, 79, 79`
+  - Search input left/right padding equal
+  - Search input and country filter do not overlap
   - Console warn/error: none
+  - Request failures: none
+- Mobile 390px Chrome check: PASS
+  - App title and station cards render
   - Horizontal overflow: none
-- Mobile 360px Browser check: PASS
-  - Japan panel and NHK result visible
-  - Horizontal overflow: none
-  - Out-of-viewport control rects: none
-- Shonan YouTube alternate: PASS
-  - Detail panel shows verified YouTube alternate source
-  - Button mounts visible iframe
-  - iframe src: `https://www.youtube.com/embed/qGCPvnk8Unc?rel=0`
-  - MiniPlayer hidden while YouTube source is active
+  - Bottom navigation widths equal: `86, 86, 86, 86`
+  - Search input left/right padding equal
+  - Search input and country filter do not overlap
+  - `japan` query maps to Japan country filter
+  - Choosing Spain after `japan` clears the conflicting query
+  - All-country genre menu excludes Japan-only labels
+  - YouTube fallback opens bottom sheet with exactly one visible iframe
+  - Hidden iframe count: 0
+  - Bottom sheet close button tap target: 40px × 40px
+  - Closing the bottom sheet unmounts the YouTube iframe
+  - Web alarm copy is scoped to web only
+  - Console warn/error: none
+  - Request failures: none
 
 ## Stream Checks
 
@@ -64,7 +83,7 @@ tags:
 
 ## Not Checked
 
-- Current in-app browser rendered QA for this follow-up pass: connection/documentation bootstrap timed out after 90 seconds
+- Current in-app browser rendered QA for this follow-up pass: connection/documentation bootstrap timed out after 120 seconds
 - iOS Safari 실기기 direct audio playback
 - 일본 내 radiko 앱/웹 권역 재생
 - 장시간 스트림 안정성

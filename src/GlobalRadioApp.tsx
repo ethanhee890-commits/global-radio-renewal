@@ -345,7 +345,11 @@ export default function GlobalRadioApp() {
     sheetDragRef.current = null;
     setSheetDragOffset(0);
     setPlayerSheetOpen(false);
-  }, []);
+    if (activeSourceType === 'youtube') {
+      setActiveSourceType('radio');
+      setYoutubeMountedStationId('');
+    }
+  }, [activeSourceType]);
 
   const loadStations = useCallback(
     async (nextFilters: RadioFilters, nextQuery: string, nextSettings = settings) => {
@@ -793,6 +797,8 @@ export default function GlobalRadioApp() {
     setActiveSourceType('youtube');
     setPlaybackStatus('paused');
     setYoutubeMountedStationId(station.stationuuid);
+    setSheetDragOffset(0);
+    setPlayerSheetOpen(true);
     showToast('YouTube 플레이어를 표시했어요. 플레이어 안에서 재생을 눌러주세요.', 'success');
   }
 
@@ -1158,7 +1164,7 @@ export default function GlobalRadioApp() {
               <StationDetail
                 station={selectedStation}
                 showYouTubeAlternate={settings.showYouTubeAlternates}
-                youtubeMounted={hasMountedYouTube}
+                youtubeMounted={hasMountedYouTube && !playerSheetOpen}
                 onMountYouTube={() => selectedStation && chooseYouTube(selectedStation)}
               />
             </section>
@@ -1203,7 +1209,7 @@ export default function GlobalRadioApp() {
         />
       ) : null}
 
-      {playerSheetOpen && activeSourceType === 'radio' ? (
+      {playerSheetOpen && sheetStation ? (
         <div className="player-sheet-backdrop" role="presentation" onClick={closePlayerSheet}>
           <section
             className={`player-bottom-sheet ${sheetDragOffset > 0 ? 'is-dragging' : ''}`}

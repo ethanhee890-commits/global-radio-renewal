@@ -32,7 +32,7 @@ export function StationDetail({
   const alternate = getYouTubeAlternateForStation(station);
   const recommendation = getPreferredSource(station, alternate);
   const homepageUrl = getSafeNetworkUrl(station.homepage);
-  const canShowYouTubePlayer = Boolean(showYouTubeAlternate && shouldOfferYouTubeAlternate(station, alternate));
+  const canShowYouTubePlayer = Boolean(showYouTubeAlternate && alternate && (youtubeMounted || shouldOfferYouTubeAlternate(station, alternate)));
 
   return (
     <aside className="station-detail">

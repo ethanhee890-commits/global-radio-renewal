@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { DirectAudioPlayer } from '../components/DirectAudioPlayer';
+import { StationDetail } from '../components/StationDetail';
 import { YouTubeAlternatePlayer } from '../components/YouTubeAlternatePlayer';
 import type { RadioStation, YouTubeAlternateSource } from '../types/station';
 
@@ -86,6 +87,18 @@ describe('YouTube fallback UI boundaries', () => {
     expect(markup).toContain('https://www.youtube.com/embed/live_stream?channel=UCKNZsAeQXpvI-Mpoc0ZKhsA');
     expect(markup).toContain('allow="autoplay; encrypted-media; picture-in-picture"');
     expect(markup).toContain('referrerPolicy="strict-origin-when-cross-origin"');
+    expect(markup).not.toContain('display:none');
+    expect(markup).not.toContain('visibility:hidden');
+  });
+
+  it('keeps the visible YouTube iframe reachable after the user chooses fallback for a good-quality station', () => {
+    const markup = renderToStaticMarkup(
+      <StationDetail station={station} showYouTubeAlternate youtubeMounted onMountYouTube={vi.fn()} />
+    );
+
+    expect(markup).toContain('<iframe');
+    expect(markup).toContain('class="youtube-frame"');
+    expect(markup).toContain('https://www.youtube.com/embed/live_stream?channel=UCKNZsAeQXpvI-Mpoc0ZKhsA');
     expect(markup).not.toContain('display:none');
     expect(markup).not.toContain('visibility:hidden');
   });
