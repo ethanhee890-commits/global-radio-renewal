@@ -1,4 +1,4 @@
-package com.dexcompany.globalradio;
+package com.dexcompany.globalradiorenewal;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -19,9 +19,9 @@ import android.text.TextUtils;
 import java.io.IOException;
 
 public class NativeRadioService extends Service {
-    public static final String ACTION_PLAY = "com.dexcompany.globalradio.PLAY";
-    public static final String ACTION_PAUSE = "com.dexcompany.globalradio.PAUSE";
-    public static final String ACTION_STOP = "com.dexcompany.globalradio.STOP";
+    public static final String ACTION_PLAY = "com.dexcompany.globalradiorenewal.PLAY";
+    public static final String ACTION_PAUSE = "com.dexcompany.globalradiorenewal.PAUSE";
+    public static final String ACTION_STOP = "com.dexcompany.globalradiorenewal.STOP";
     public static final String EXTRA_URL = "url";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_SUBTITLE = "subtitle";

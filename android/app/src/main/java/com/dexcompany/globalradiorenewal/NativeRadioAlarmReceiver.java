@@ -1,4 +1,4 @@
-package com.dexcompany.globalradio;
+package com.dexcompany.globalradiorenewal;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

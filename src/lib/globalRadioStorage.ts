@@ -1,9 +1,9 @@
 import type { GlobalRadioSettings, RadioStation, StoredStation } from '../types/station';
 import { getSafeHttpsUrl, getSafeNetworkUrl } from './urlSafety';
 
-export const FAVORITES_STORAGE_KEY = 'global-radio-pwa:favorites:v1';
-export const RECENT_STORAGE_KEY = 'global-radio-pwa:recent:v1';
-export const SETTINGS_STORAGE_KEY = 'global-radio-pwa:settings:v1';
+export const FAVORITES_STORAGE_KEY = 'global-radio-renewal:favorites:v1';
+export const RECENT_STORAGE_KEY = 'global-radio-renewal:recent:v1';
+export const SETTINGS_STORAGE_KEY = 'global-radio-renewal:settings:v1';
 
 export const DEFAULT_GLOBAL_RADIO_SETTINGS: GlobalRadioSettings = {
   preferHttps: true,

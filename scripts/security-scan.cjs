@@ -153,7 +153,7 @@ for (const requiredIgnore of ['.env.local', '.env.*.local', 'node_modules/', 'di
 }
 
 const packageJson = JSON.parse(readText(path.join(root, 'package.json')) || '{}');
-if (packageJson.name !== 'global-radio-pwa') {
+if (packageJson.name !== 'global-radio-renewal') {
   findings.push('package.json: package name must match the release app identity.');
 }
 if (packageJson.private !== true) {
@@ -169,7 +169,7 @@ if (!viteConfig.includes("publicDir: 'public-radio'")) {
 }
 
 const capacitorConfig = readText(path.join(root, 'capacitor.config.ts'));
-if (!capacitorConfig.includes("appId: 'com.dexcompany.globalradio'")) {
+if (!capacitorConfig.includes("appId: 'com.dexcompany.globalradiorenewal'")) {
   findings.push('capacitor.config.ts: native appId must remain stable for Android/iOS packaging.');
 }
 if (!capacitorConfig.includes("webDir: 'dist'")) {
@@ -260,7 +260,7 @@ if (androidFilePaths && /<external-path\b[^>]*path="\.?"/.test(androidFilePaths)
   findings.push('android/app/src/main/res/xml/file_paths.xml: FileProvider must not expose the whole external storage root.');
 }
 
-const nativeRadioPlugin = readText(path.join(root, 'android', 'app', 'src', 'main', 'java', 'com', 'dexcompany', 'globalradio', 'NativeRadioPlugin.java'));
+const nativeRadioPlugin = readText(path.join(root, 'android', 'app', 'src', 'main', 'java', 'com', 'dexcompany', 'globalradiorenewal', 'NativeRadioPlugin.java'));
 if (nativeRadioPlugin) {
   for (const requiredNativeRadioCheck of ['startsWith("https://") || url.startsWith("http://")', 'scheduleAlarm', 'openExactAlarmSettings']) {
     if (!nativeRadioPlugin.includes(requiredNativeRadioCheck)) {

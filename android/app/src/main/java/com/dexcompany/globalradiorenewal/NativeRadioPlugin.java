@@ -1,4 +1,4 @@
-package com.dexcompany.globalradio;
+package com.dexcompany.globalradiorenewal;
 
 import android.content.Intent;
 import android.content.SharedPreferences;

@@ -1,12 +1,12 @@
-# 지구라디오
+# 지구라디오 리뉴얼
 
-전세계 공개 인터넷 라디오를 검색하고, 좋은 음질의 직접 스트림을 우선 재생하는 모바일 PWA/하이브리드 앱입니다. Radio Browser API를 기본 검색원으로 사용하고, API가 느리거나 실패해도 curated seed 방송으로 바로 들을 수 있게 구성했습니다.
+현재 지구라디오 안정판을 기준으로 분리한 리뉴얼 전용 모바일 PWA/하이브리드 앱입니다. 원본 `global-radio-pwa`는 그대로 유지하고, 이 저장소에서는 별도 UI/UX/브랜딩 실험과 리뉴얼 배포를 진행합니다.
 
 ## 공유 주소
 
-- 웹페이지: https://ethanhee890-commits.github.io/global-radio-pwa/
-- Android APK: https://github.com/ethanhee890-commits/global-radio-pwa/releases/download/android-debug-2026-07-09/jigu-radio-latest-debug.apk
-- APK ZIP: https://github.com/ethanhee890-commits/global-radio-pwa/releases/download/android-debug-2026-07-09/jigu-radio-latest-debug.zip
+- 웹페이지: https://ethanhee890-commits.github.io/global-radio-renewal/
+- GitHub: https://github.com/ethanhee890-commits/global-radio-renewal
+- Android APK: 준비 중
 
 ## 주요 기능
 

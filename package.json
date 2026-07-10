@@ -1,6 +1,6 @@
 {
-  "name": "global-radio-pwa",
-  "description": "전세계 공개 인터넷 라디오를 좋은 음질의 채널부터 검색하고 재생하는 모바일 PWA",
+  "name": "global-radio-renewal",
+  "description": "지구라디오 리뉴얼을 위한 별도 모바일 PWA/하이브리드 앱",
   "version": "0.1.0",
   "private": true,
   "type": "module",

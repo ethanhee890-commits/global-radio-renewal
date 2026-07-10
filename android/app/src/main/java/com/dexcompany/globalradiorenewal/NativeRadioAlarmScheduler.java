@@ -1,4 +1,4 @@
-package com.dexcompany.globalradio;
+package com.dexcompany.globalradiorenewal;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;

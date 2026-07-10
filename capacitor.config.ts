@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.dexcompany.globalradio',
-  appName: '지구라디오',
+  appId: 'com.dexcompany.globalradiorenewal',
+  appName: '지구라디오 리뉴얼',
   webDir: 'dist',
   backgroundColor: '#0D0F14',
   loggingBehavior: 'none',
