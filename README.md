@@ -6,7 +6,7 @@
 
 - 웹페이지: https://ethanhee890-commits.github.io/global-radio-renewal/
 - GitHub: https://github.com/ethanhee890-commits/global-radio-renewal
-- Android APK: 준비 중
+- Android APK: https://github.com/ethanhee890-commits/global-radio-renewal/releases/download/android-debug-2026-07-10-renewal-initial/jigu-radio-renewal-latest-debug.apk
 
 ## 주요 기능
 
